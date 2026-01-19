@@ -1,0 +1,25 @@
+{
+    "$schema": "https://opencode.ai/config.json",
+    "mcp": {
+        "notion": {
+            "enabled": false,
+            "type": "remote",
+            "url": "https://mcp.notion.com/mcp"
+        },
+        "JIRA": {
+            "enabled": false,
+            "type": "remote",
+            "url": "https://mcp.atlassian.com/v1/sse"
+        }
+    },
+    "agent": {
+        "build": {
+            "permission": {
+                "skill": {
+                    "conventional-commits": "allow"
+                    "prepare-commit-changes": "allow",
+                }
+            }
+        }
+    }
+}
