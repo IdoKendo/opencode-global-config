@@ -16,8 +16,8 @@
         "build": {
             "permission": {
                 "skill": {
-                    "conventional-commits": "allow"
-                    "prepare-commit-changes": "allow",
+                    "conventional-commits": "allow",
+                    "prepare-commit-changes": "allow"
                 }
             }
         }
