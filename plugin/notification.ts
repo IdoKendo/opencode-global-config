@@ -8,6 +8,7 @@ export const NotificationPlugin = async ({ project, client, $, directory, worktr
         event: async ({ event }) => {
             const platform = process.platform;
             const title = "opencode";
+            const soundEnabled = isEnvTrue(process.env.OPENCODE_SOUND_NOTIFICATION);
 
             if (event.type === "message.part.updated") {
                 if (event.properties.part.type === "text") {
@@ -21,14 +22,23 @@ export const NotificationPlugin = async ({ project, client, $, directory, worktr
 
                 if (platform === "darwin") {
                     await $`osascript -e 'display notification ${JSON.stringify(msg)} with title "${title}"'`;
-                    await $`afplay /System/Library/Sounds/Blow.aiff 2>/dev/null || true`;
+                    if (soundEnabled) {
+                        await $`afplay /System/Library/Sounds/Blow.aiff 2>/dev/null || true`;
+                    }
                 } else if (platform === "linux") {
                     await $`notify-send "${title}" "${msg.replace(/'/g, "'\\''")}"`;
-                    await $`paplay /usr/share/sounds/freedesktop/stereo/complete.oga 2>/dev/null || true`;
+                    if (soundEnabled) {
+                        await $`paplay /usr/share/sounds/freedesktop/stereo/complete.oga 2>/dev/null || true`;
+                    }
                 }
             }
         },
     }
+}
+
+function isEnvTrue(value?: string) {
+    if (!value) return false;
+    return ["1", "true", "yes", "y", "on"].includes(value.trim().toLowerCase());
 }
 
 function getIdleSummary(text: string | null) {
