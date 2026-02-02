@@ -5,11 +5,11 @@ description: Proactively simplify recently modified code while preserving exact 
 
 # Simplify Code
 
-## What do I do
+## What I do
 
 I simplify recently modified code to improve clarity, consistency, and maintainability without changing behavior.
 
-## When to use me
+## When to use this
 
 Use this skill proactively after code is written or modified, unless the user asks for a different scope.
 
@@ -30,7 +30,7 @@ Use this skill proactively after code is written or modified, unless the user as
 - Do not remove useful abstractions that improve organization.
 - Do not add comments unless they clarify a non-obvious block.
 
-## Refinement process
+## Process
 
 1. Identify recently modified sections.
 2. Look for unnecessary complexity or duplication.

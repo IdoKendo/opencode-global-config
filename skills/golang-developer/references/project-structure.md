@@ -471,7 +471,7 @@ func Load() (*Config, error) {
 }
 ```
 
-## Quick Reference
+## Quick reference
 
 | Command | Description |
 |---------|-------------|

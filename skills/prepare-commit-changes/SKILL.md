@@ -5,13 +5,13 @@ description: Stage specific code hunks using git hunks for selective commit prep
 
 # Prepare Commit Changes
 
-## What do I do
+## What I do
 
 - List all unstaged and staged hunks with their unique IDs
 - Present hunks to the user for selection
 - Stage only the hunks the user explicitly selects
 
-## When to use me
+## When to use this
 
 Use this when the user asks to stage changes to git.
 
@@ -30,7 +30,7 @@ Use this when the user asks to stage changes to git.
 1. Run `git hunks list` to show all unstaged hunks
 2. Run `git hunks list --staged` to show already staged hunks
 3. Present both lists to the user with numbered options
-4. Ask user to select hunks to stage (accepts multiple: comma-separated, ranges, or all keyword)
+4. Ask the user to select hunks to stage (accepts multiple: comma-separated, ranges, or all keyword)
 5. Run `git hunks add` with all selected hunk IDs
 6. Confirm which hunks were staged
 
@@ -39,7 +39,7 @@ Use this when the user asks to stage changes to git.
 - Only stage hunks the user explicitly selects
 - Never assume which hunks to stage without user confirmation
 - Allow multi-hunk selection in a single prompt
-- Handle empty selection gracefully (no hunks staged)
+- If selection is empty, stage nothing
 - Show both unstaged and staged hunks so user knows current state
 
 ## Examples

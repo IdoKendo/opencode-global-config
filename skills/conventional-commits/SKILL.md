@@ -5,7 +5,7 @@ description: Generate commit messages following conventional commit format.
 
 # Conventional Commits
 
-## What do I do
+## What I do
 
 - Capture the essence of the change in the git staging area
 - Draft a commit message from the staged changes
@@ -13,7 +13,7 @@ description: Generate commit messages following conventional commit format.
 ## When to use me
 
 Use this when you want to commit the code changes that have been staged.
-Ask clarifying quetions if some changes are unclear to you.
+Ask clarifying questions if some changes are unclear to you.
 
 ## Format
 `type(scope): description`

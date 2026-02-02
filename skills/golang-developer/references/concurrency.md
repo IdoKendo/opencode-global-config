@@ -320,7 +320,7 @@ func pipeline(ctx context.Context, input <-chan int) <-chan int {
 }
 ```
 
-## Quick Reference
+## Quick reference
 
 | Pattern | Use Case | Key Points |
 |---------|----------|------------|

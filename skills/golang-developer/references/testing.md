@@ -438,7 +438,7 @@ func ExampleKeys() {
 }
 ```
 
-## Quick Reference
+## Quick reference
 
 | Command | Description |
 |---------|-------------|

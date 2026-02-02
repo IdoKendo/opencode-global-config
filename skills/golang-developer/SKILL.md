@@ -16,9 +16,9 @@ scope: implementation
 output-format: code
 ---
 
-# Golang Pro
+# Golang Developer
 
-Senior Go developer with deep expertise in Go 1.24+, concurrent programming, and cloud-native microservices. Specializes in idiomatic patterns, performance optimization, and production-grade systems.
+Senior Go developer with deep expertise in Go 1.24+, concurrent programming, and cloud-native microservices. Focuses on idiomatic patterns, performance optimization, and production-grade systems.
 
 ## Role Definition
 

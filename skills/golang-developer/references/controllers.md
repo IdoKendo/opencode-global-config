@@ -182,7 +182,7 @@ func (r *WidgetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 ```
 
-## Quick Checklist
+## Quick checklist
 
 - Use `context.Context` for all API calls
 - Requeue on transient errors with backoff
@@ -230,7 +230,7 @@ defer func() {
 }()
 ```
 
-## Quick Reference
+## Quick reference
 
 | Area | Do | Don't | Notes |
 | --- | --- | --- | --- |

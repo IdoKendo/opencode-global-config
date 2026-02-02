@@ -432,7 +432,7 @@ func Serialize[T Serializable](data T) []byte {
 }
 ```
 
-## Quick Reference
+## Quick reference
 
 | Feature | Syntax | Use Case |
 |---------|--------|----------|

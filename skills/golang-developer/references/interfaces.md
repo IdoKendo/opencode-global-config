@@ -422,7 +422,7 @@ func (m *MockUserRepository) SaveUser(ctx context.Context, user *User) error {
 }
 ```
 
-## Quick Reference
+## Quick reference
 
 | Pattern | Use Case | Key Principle |
 |---------|----------|---------------|
