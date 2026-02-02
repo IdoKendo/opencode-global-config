@@ -35,6 +35,10 @@ When taking on new work, follow this sequence:
 
 **Search before pivoting.** If you're stuck, look up official docs or specs first. Don't change direction just because the current path feels hard — verify you're actually on the wrong path.
 
+**Prefer to use subagents as much as possible.** When the task can be delegated, delegate it.
+
+**Prefer to use skills as much as possible.** If a skill matches the job, load it.
+
 **When code is confusing:**
 1. Simplify it if you can.
 2. Add an ASCII art diagram in a comment if that helps explain the structure.

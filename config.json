@@ -13,6 +13,12 @@
             "enabled": false,
             "type": "remote",
             "url": "https://mcp.atlassian.com/v1/sse"
+        },
+        "Gitlab": {
+            "enabled": false,
+            "type": "remote",
+            "url": "https://gitlab.com/api/v4/mcp",
+            "oauth": {}
         }
     },
     "agent": {
