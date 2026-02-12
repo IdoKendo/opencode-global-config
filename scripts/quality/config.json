@@ -1,0 +1,14 @@
+{
+  "agentPermissionExemptions": [
+    { "file": "agent/bug-hunter.md", "pattern": "ls *" },
+    { "file": "agent/bug-hunter.md", "pattern": "which *" },
+    { "file": "agent/bug-hunter.md", "pattern": "rg *" },
+    { "file": "agent/bug-hunter.md", "pattern": "cat *" },
+    { "file": "agent/bug-hunter.md", "pattern": "head *" },
+    { "file": "agent/bug-hunter.md", "pattern": "tail *" },
+    { "file": "agent/bug-hunter.md", "pattern": "jk *" },
+    { "file": "agent/jenkins-expert.md", "pattern": "jk *" },
+    { "file": "agent/jenkins-expert.md", "pattern": "ls *" },
+    { "file": "agent/jenkins-expert.md", "pattern": "which *" }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "name": "opencode-config-quality",
+  "private": true,
+  "version": "1.0.0",
+  "devDependencies": {
+    "@types/node": "^24.4.0",
+    "typescript": "^5.9.2"
+  },
+  "scripts": {
+    "quality:config-parse": "node scripts/quality/check-config-parse.mjs",
+    "quality:secret-scan": "node scripts/quality/check-secret-scan.mjs",
+    "quality:agent-permissions": "node scripts/quality/check-agent-permissions.mjs",
+    "quality:skill-safety": "node scripts/quality/check-skill-safety.mjs",
+    "quality:runtime": "node scripts/quality/check-runtime-quality.mjs",
+    "quality": "npm run quality:config-parse && npm run quality:secret-scan && npm run quality:agent-permissions && npm run quality:skill-safety && npm run quality:runtime"
+  }
+}

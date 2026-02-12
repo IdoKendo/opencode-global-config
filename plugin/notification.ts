@@ -3,16 +3,41 @@ let lastMessage: { messageID: string | null; text: string | null } = {
     text: null,
 };
 
-export const NotificationPlugin = async ({ project, client, $, directory, worktree }) => {
+type CommandRunner = (strings: TemplateStringsArray, ...values: unknown[]) => Promise<unknown>;
+
+type RuntimeEvent = {
+    type: string;
+    properties?: {
+        part?: {
+            type?: string;
+            messageID?: string | null;
+            text?: string | null;
+        };
+    };
+};
+
+export const NotificationPlugin = async ({ $, project, client, directory, worktree }: {
+    $: CommandRunner;
+    project?: unknown;
+    client?: unknown;
+    directory?: unknown;
+    worktree?: unknown;
+}) => {
+    void project;
+    void client;
+    void directory;
+    void worktree;
+
     return {
-        event: async ({ event }) => {
+        event: async ({ event }: { event: RuntimeEvent }) => {
             const platform = process.platform;
             const title = "opencode";
             const soundEnabled = isEnvTrue(process.env.OPENCODE_SOUND_NOTIFICATION);
 
             if (event.type === "message.part.updated") {
-                if (event.properties.part.type === "text") {
-                    const { messageID, text } = event.properties.part;
+                const part = event.properties?.part;
+                if (part?.type === "text") {
+                    const { messageID = null, text = null } = part;
                     lastMessage = { messageID, text };
                 }
             }
@@ -26,7 +51,7 @@ export const NotificationPlugin = async ({ project, client, $, directory, worktr
                         await $`afplay /System/Library/Sounds/Blow.aiff 2>/dev/null || true`;
                     }
                 } else if (platform === "linux") {
-                    await $`notify-send "${title}" "${msg.replace(/'/g, "'\\''")}"`;
+                    await $`notify-send ${title} ${msg}`;
                     if (soundEnabled) {
                         await $`paplay /usr/share/sounds/freedesktop/stereo/complete.oga 2>/dev/null || true`;
                     }

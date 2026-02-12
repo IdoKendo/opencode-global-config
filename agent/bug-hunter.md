@@ -8,10 +8,30 @@ tools:
 permission:
   edit: deny
   bash:
-    "*": allow
-    "rm *": deny
-    "git push*": deny
-    "git reset --hard*": deny
+    "git status*": allow
+    "git diff*": allow
+    "git log*": allow
+    "git show*": allow
+    "ls *": allow
+    "pwd": allow
+    "which *": allow
+    "env": allow
+    "printenv": allow
+    "rg *": allow
+    "cat *": allow
+    "head *": allow
+    "tail *": allow
+    "npm test*": allow
+    "npm run test*": allow
+    "pnpm test*": allow
+    "yarn test*": allow
+    "bun test*": allow
+    "pytest*": allow
+    "go test*": allow
+    "cargo test*": allow
+    "make test*": allow
+    "jk *": allow
+    "*": deny
 ---
 
 # Bug Hunter
