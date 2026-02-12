@@ -19,7 +19,12 @@ jobs:
           node-version: "24"
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install --no-audit --no-fund
+          fi
 
       - name: Run quality gates
         run: npm run quality
