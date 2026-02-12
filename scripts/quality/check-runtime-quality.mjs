@@ -34,12 +34,20 @@ if (tsFiles.length > 0) {
       output: "Runtime TS files found but tsconfig.json is missing.",
     });
   } else {
-    const typecheck = runCommand("npx", ["--no-install", "tsc", "--noEmit", "--pretty", "false", "-p", "tsconfig.json"]);
-    if (typecheck.status !== 0) {
+    const tscVersion = runCommand("npx", ["--no-install", "tsc", "-v"]);
+    if (tscVersion.status !== 0) {
       errors.push({
         file: "tsconfig.json",
-        output: (typecheck.stderr || typecheck.stdout || "Typecheck failed").trim(),
+        output: "Runtime TS files found but TypeScript binary is unavailable. Run `npm ci` and try again.",
       });
+    } else {
+      const typecheck = runCommand("npx", ["--no-install", "tsc", "--noEmit", "--pretty", "false", "-p", "tsconfig.json"]);
+      if (typecheck.status !== 0) {
+        errors.push({
+          file: "tsconfig.json",
+          output: (typecheck.stderr || typecheck.stdout || "Typecheck failed").trim(),
+        });
+      }
     }
   }
 }
