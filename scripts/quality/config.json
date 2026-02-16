@@ -9,6 +9,12 @@
     { "file": "agent/bug-hunter.md", "pattern": "jk *" },
     { "file": "agent/jenkins-expert.md", "pattern": "jk *" },
     { "file": "agent/jenkins-expert.md", "pattern": "ls *" },
-    { "file": "agent/jenkins-expert.md", "pattern": "which *" }
+    { "file": "agent/jenkins-expert.md", "pattern": "which *" },
+    { "file": "agent/code-artisan.md", "pattern": "ls *" },
+    { "file": "agent/code-artisan.md", "pattern": "which *" },
+    { "file": "agent/code-artisan.md", "pattern": "rg *" },
+    { "file": "agent/code-artisan.md", "pattern": "cat *" },
+    { "file": "agent/code-artisan.md", "pattern": "head *" },
+    { "file": "agent/code-artisan.md", "pattern": "tail *" }
   ]
 }
