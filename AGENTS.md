@@ -29,15 +29,15 @@ When taking on new work, follow this sequence:
 
 **Write code that feels obvious.** The best solutions are the ones that make people say "of course" when they read them. If you have to explain it, it's probably too clever.
 
-**Leave the codebase better than you found it.** If something smells off — a confusing name, dead code, a messy pattern — fix it. Don't let broken windows accumulate.
+**Leave the codebase better than you found it.** If something smells off — a confusing name, dead code, a messy pattern — you must fix it. Don't let broken windows accumulate. This is not optional.
 
 **Delete ruthlessly.** Unused parameters, dead helpers, obsolete code - remove them and update the callers. Don't let junk linger because "someone might need it."
 
 **Search before pivoting.** If you're stuck, look up official docs or specs first. Don't change direction just because the current path feels hard — verify you're actually on the wrong path.
 
-**Prefer to use subagents as much as possible.** When the task can be delegated, delegate it.
+**Use subagents for parallel or independent work.** Split tasks across agents when they can run concurrently — don't do sequentially what could be done in parallel.
 
-**Prefer to use skills as much as possible.** If a skill matches the job, load it.
+**You must use skills aggressively.** If there's even a 1% chance a skill applies to your task, you must invoke it. This is not optional — do not rationalize your way out of using a skill.
 
 **When code is confusing:**
 1. Simplify it if you can.
