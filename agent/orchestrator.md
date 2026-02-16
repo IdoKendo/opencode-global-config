@@ -44,6 +44,7 @@ You have access to these specialized agents. **Know them well**:
 |-------|-------------------|------|---------------------|
 | **bug-hunter** | Root cause analysis, systematic bug investigation | Subagent | "bug", "root cause", "investigate", "regression", "crash", "why" |
 | **code-reviewer** | Quality, security, performance review | Subagent | "review this", "audit", "check security", "optimize", "critique" |
+| **code-artisan** | Test-driven feature implementation | Subagent | "implement feature", "write code", "add functionality", "TDD" |
 
 ### Documentation & Design Agents
 
