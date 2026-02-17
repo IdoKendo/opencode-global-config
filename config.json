@@ -1,24 +1,20 @@
 {
     "$schema": "https://opencode.ai/config.json",
-    "plugin": [
-        "opencode-gemini-auth@latest"
-    ],
     "mcp": {
         "notion": {
             "enabled": false,
             "type": "remote",
             "url": "https://mcp.notion.com/mcp"
         },
-        "JIRA": {
+        "jira": {
             "enabled": false,
             "type": "remote",
             "url": "https://mcp.atlassian.com/v1/sse"
         },
-        "Gitlab": {
+        "gitlab": {
             "enabled": false,
             "type": "remote",
-            "url": "https://gitlab.com/api/v4/mcp",
-            "oauth": {}
+            "url": "https://gitlab.com/api/v4/mcp"
         }
     },
     "agent": {
