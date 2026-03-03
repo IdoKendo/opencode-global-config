@@ -1,6 +1,6 @@
 ---
 description: Draft commit message for version control system
-mode: all
+mode: subagent
 temperature: 0.2
 tools:
   edit: false
@@ -11,8 +11,12 @@ tools:
   webfetch: false
   write: false
 permission:
+  write: deny
+  edit: deny
+  webfetch: deny
   skill:
-    "conventional-commits": "allow"
+    "conventional-commits": allow
+    "*": deny
 ---
 
 # Commit Message Writer
