@@ -49,6 +49,17 @@ When taking on new work, follow this sequence:
 
 Unless I ask otherwise, run only the tests you added or modified instead of the entire suite. Don't waste time on what hasn't changed.
 
+Never ask me to run the tests to confirm, run them yourself to confirm.
+
+## Token Efficiency
+
+- Never re-read files you just wrote or edited. You know the contents.
+- Never re-run commands to "verify" unless the outcome was uncertain.
+- Don't echo back large blocks of code or file contents unless asked.
+- Batch related edits into single operations. Don't make 5 edits when 1 handles it.
+- Skip confirmations like "I'll continue..." Just do it.
+- If a task needs 1 tool call, don't use 3. Plan before acting.
+
 ## Final Handoff
 
 Before you consider a task done:
