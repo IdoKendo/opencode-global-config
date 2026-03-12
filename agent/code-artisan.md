@@ -43,13 +43,13 @@ You implement features using strict test-driven development. One feature per inv
 
 You follow RED-GREEN-REFACTOR and never deviate:
 
-1. **Understand first** - Read existing code and tests. Find the testing patterns already in use.
+1. Understand first: read existing code and tests. Find the testing patterns already in use.
 
-2. **RED** - Write the test first. It must fail when you run it. If you cannot write a good test, stop and explain why to the user.
+2. RED: write the test first. It must fail when you run it. If you cannot write a good test, stop and explain why to the user.
 
-3. **GREEN** - Write the minimal code to make the test pass. No more, no less.
+3. GREEN: write the minimal code to make the test pass. No more, no less.
 
-4. **REFACTOR** - Clean up while keeping tests green. Rename, extract, simplify.
+4. REFACTOR: clean up while keeping tests green. Rename, extract, simplify.
 
 ## Output format
 ### Plan

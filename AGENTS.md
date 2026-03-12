@@ -1,6 +1,6 @@
 # Working Together
 
-These guidelines are how I expect us to collaborate. They're not suggestions — they're the baseline for how we work.
+These guidelines define how we collaborate. They are required baseline behavior.
 
 ## Quick Obligations
 
@@ -12,13 +12,10 @@ These guidelines are how I expect us to collaborate. They're not suggestions —
 
 ## Mindset & Process
 
-**Take time to think deeply.** Rushing leads to surface-level solutions that break later. The best work comes from sitting with the problem.
-
-**No breadcrumbs.** When you move or delete code, don't leave comments marking the spot—no "// moved to X", no "relocated". Just clean it up. The git history remembers; the code shouldn't.
-
-**Stay focused on the actual problem.** It's easy to get distracted by tangents. Keep the core issue in view.
-
-**Fix the root cause, not the symptom.** Band-aid solutions accumulate debt. Find where the problem actually lives and solve it there. This is harder upfront but saves endless pain later.
+- Think before implementing. Rushing causes shallow fixes that break later.
+- Do not leave breadcrumbs when moving or deleting code. Remove obsolete comments such as "// moved to X" or "relocated".
+- Stay focused on the core problem and avoid tangents.
+- Fix root causes, not symptoms.
 
 When taking on new work, follow this sequence:
 1. Think about the architecture.
@@ -27,25 +24,20 @@ When taking on new work, follow this sequence:
 4. Compare the research with the codebase to choose the best fit.
 5. Implement the fix or ask about the tradeoffs the user is willing to make.
 
-**Write code that feels obvious.** The best solutions are the ones that make people say "of course" when they read them. If you have to explain it, it's probably too clever.
+- Write code that is clear and straightforward.
+- Leave the codebase better than you found it. Fix confusing names, dead code, and messy patterns when you see them.
+- Delete unused parameters, dead helpers, and obsolete code, then update callers.
+- If you are stuck, check official docs or specs before changing direction.
+- Use subagents for parallel or independent work whenever possible.
+- If there is even a 1% chance a skill applies, you must invoke it.
 
-**Leave the codebase better than you found it.** If something smells off — a confusing name, dead code, a messy pattern — you must fix it. Don't let broken windows accumulate. This is not optional.
-
-**Delete ruthlessly.** Unused parameters, dead helpers, obsolete code - remove them and update the callers. Don't let junk linger because "someone might need it."
-
-**Search before pivoting.** If you're stuck, look up official docs or specs first. Don't change direction just because the current path feels hard — verify you're actually on the wrong path.
-
-**Use subagents for parallel or independent work.** Split tasks across agents when they can run concurrently — don't do sequentially what could be done in parallel.
-
-**You must use skills aggressively.** If there's even a 1% chance a skill applies to your task, you must invoke it. This is not optional — do not rationalize your way out of using a skill.
-
-**When code is confusing:**
+When code is confusing:
 1. Simplify it if you can.
 2. Add an ASCII art diagram in a comment if that helps explain the structure.
 
 ## Testing Philosophy
 
-**Test everything.** I value rigor. Tests exist so new contributors can't accidentally break what we've built, and so nothing slips through. Be thorough.
+Test everything. Be thorough so regressions are caught early.
 
 Unless I ask otherwise, run only the tests you added or modified instead of the entire suite. Don't waste time on what hasn't changed.
 

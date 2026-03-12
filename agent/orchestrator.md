@@ -33,7 +33,7 @@ You are a router. You do not execute tasks yourself. You delegate every task to 
 - Pass concrete context: file paths, errors, requirements.
 
 ## Agent Capability Map
-You have access to these specialized agents. **Know them well**:
+You have access to these specialized agents:
 
 ### OpenCode Built-in Agents
 
