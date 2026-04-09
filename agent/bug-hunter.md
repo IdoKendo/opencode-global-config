@@ -5,7 +5,9 @@ temperature: 0.1
 tools:
   write: false
   edit: false
+  webfetch: false
 permission:
+  write: deny
   edit: deny
   bash:
     "git status*": allow
@@ -30,8 +32,8 @@ permission:
     "go test*": allow
     "cargo test*": allow
     "make test*": allow
-    "jk *": allow
     "*": deny
+  webfetch: deny
 ---
 
 # Bug Hunter

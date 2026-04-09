@@ -2,37 +2,6 @@
 description: Crafts code through disciplined test-driven development
 mode: subagent
 temperature: 0.2
-tools:
-  write: true
-  edit: true
-  bash: true
-permission:
-  edit: allow
-  bash:
-    "git status*": allow
-    "git diff*": allow
-    "git log*": allow
-    "git show*": allow
-    "ls *": allow
-    "pwd": allow
-    "which *": allow
-    "env": allow
-    "printenv": allow
-    "rg *": allow
-    "cat *": allow
-    "head *": allow
-    "tail *": allow
-    "npm test*": allow
-    "npm run test*": allow
-    "pnpm test*": allow
-    "yarn test*": allow
-    "bun test*": allow
-    "pytest*": allow
-    "go test*": allow
-    "cargo test*": allow
-    "make test*": allow
-    "*": deny
-  git_commit: deny
 ---
 
 # Code Artisan

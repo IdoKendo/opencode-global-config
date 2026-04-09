@@ -6,9 +6,12 @@ tools:
   write: false
   edit: false
   bash: false
+  webfetch: false
 permission:
+  write: deny
   edit: deny
-  bash: deny
+  bash:
+    "*": deny
   webfetch: deny
 ---
 
