@@ -44,45 +44,61 @@ export const NotificationPlugin = async ({ $, project, client, directory, worktr
             const platform = process.platform;
             const title = "opencode";
             const soundEnabled = isEnvTrue(process.env.OPENCODE_SOUND_NOTIFICATION);
-
-            if (event.type === "session.created" || event.type === "session.updated") {
-                const sessionInfo = event.properties?.info;
-                if (sessionInfo?.id) {
-                    isMainSessionCache.set(sessionInfo.id, !sessionInfo.parentID);
-                }
-            }
-
-            if (event.type === "message.part.updated") {
-                const part = event.properties?.part;
-                if (part?.type === "text") {
-                    const sessionID = part.sessionID;
-                    const { messageID = null, text = null } = part;
-                    if (sessionID) {
-                        lastMessageBySession.set(sessionID, { messageID, text });
+            switch (event.type) {
+                case "session.created":
+                case "session.updated":
+                    const sessionInfo = event.properties?.info;
+                    if (sessionInfo?.id) {
+                        isMainSessionCache.set(sessionInfo.id, !sessionInfo.parentID);
                     }
-                }
-            }
-
-            if (event.type === "session.idle") {
-                const sessionID = event.properties?.sessionID;
-                if (!sessionID) return;
-
-                const shouldNotify = await isMainSession(sessionID, client);
-                if (!shouldNotify) return;
-
-                const msg = getIdleSummary(lastMessageBySession.get(sessionID)?.text ?? null) ?? "Idle";
-
-                if (platform === "darwin") {
-                    await $`osascript -e 'display notification ${JSON.stringify(msg)} with title "${title}"'`;
-                    if (soundEnabled) {
-                        await $`afplay /System/Library/Sounds/Blow.aiff 2>/dev/null || true`;
+                    break;
+                case "message.part.updated":
+                    const part = event.properties?.part;
+                    if (part?.type === "text") {
+                        const sessionID = part.sessionID;
+                        const { messageID = null, text = null } = part;
+                        if (sessionID) {
+                            lastMessageBySession.set(sessionID, { messageID, text });
+                        }
                     }
-                } else if (platform === "linux") {
-                    await $`notify-send ${title} ${msg}`;
-                    if (soundEnabled) {
-                        await $`paplay /usr/share/sounds/freedesktop/stereo/complete.oga 2>/dev/null || true`;
+                    break;
+                case "session.idle":
+                    const sessionID = event.properties?.sessionID;
+                    if (!sessionID) return;
+
+                    const shouldNotify = await isMainSession(sessionID, client);
+                    if (!shouldNotify) return;
+
+                    const msg = getIdleSummary(lastMessageBySession.get(sessionID)?.text ?? null) ?? "Idle";
+
+                    if (platform === "darwin") {
+                        await $`osascript -e 'display notification ${JSON.stringify(msg)} with title "${title}"'`;
+                        if (soundEnabled) {
+                            await $`afplay /System/Library/Sounds/Blow.aiff 2>/dev/null || true`;
+                        }
+                    } else if (platform === "linux") {
+                        await $`notify-send ${title} ${msg}`;
+                        if (soundEnabled) {
+                            await $`paplay /usr/share/sounds/freedesktop/stereo/complete.oga 2>/dev/null || true`;
+                        }
                     }
-                }
+                    break;
+                case "permission.asked":
+                    const message = "Permission required";
+                    if (platform === "darwin") {
+                        await $`osascript -e 'display notification ${JSON.stringify(message)} with title "${title}"'`;
+                        if (soundEnabled) {
+                            await $`afplay /System/Library/Sounds/Blow.aiff 2>/dev/null || true`;
+                        }
+                    } else if (platform === "linux") {
+                        await $`notify-send ${title} ${message}`;
+                        if (soundEnabled) {
+                            await $`paplay /usr/share/sounds/freedesktop/stereo/complete.oga 2>/dev/null || true`;
+                        }
+                    }
+                    break;
+                default:
+                    break;
             }
         },
     }
