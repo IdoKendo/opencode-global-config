@@ -13,5 +13,11 @@
     "quality:skill-safety": "node scripts/quality/check-skill-safety.mjs",
     "quality:runtime": "node scripts/quality/check-runtime-quality.mjs",
     "quality": "npm run quality:config-parse && npm run quality:secret-scan && npm run quality:agent-permissions && npm run quality:skill-safety && npm run quality:runtime"
+  },
+  "dependencies": {
+    "@opencode-ai/plugin": "^1.4.3",
+    "@opentui/core": "0.3.2",
+    "@opentui/solid": "0.3.2",
+    "solid-js": "1.9.12"
   }
 }
