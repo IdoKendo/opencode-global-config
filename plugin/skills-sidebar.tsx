@@ -66,7 +66,7 @@ async function loadSkills(api: Parameters<TuiPlugin>[0]): Promise<SkillState> {
         })
 
         const skills = (result.data ?? [])
-            .map(({ name, description }) => ({ name, description }))
+            .map(({ name, description }) => ({ name, description: description ?? "" }))
             .sort((a, b) => a.name.localeCompare(b.name))
 
         return { status: "ok", skills }
