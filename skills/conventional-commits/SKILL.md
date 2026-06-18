@@ -5,15 +5,15 @@ description: Generate commit messages following conventional commit format.
 
 # Conventional Commits
 
-## What I do
+## Purpose
 
 - Capture the essence of the change in the git staging area
 - Draft a commit message from the staged changes
 
-## When to use me
+## Scope
 
 Use this when you want to commit the code changes that have been staged.
-Ask clarifying questions if some changes are unclear to you.
+Ask clarifying questions if some changes are unclear.
 
 ## Format
 `type(scope): description`

@@ -5,11 +5,11 @@ description: Proactively simplify recently modified code while preserving exact 
 
 # Simplify Code
 
-## What I do
+## Purpose
 
-I simplify recently modified code to improve clarity, consistency, and maintainability without changing behavior.
+Simplify recently modified code to improve clarity, consistency, and maintainability without changing behavior.
 
-## When to use this
+## Scope
 
 Use this skill proactively after code is written or modified, unless the user asks for a different scope.
 

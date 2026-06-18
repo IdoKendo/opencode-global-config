@@ -18,13 +18,13 @@ output-format: code
 
 # Golang Developer
 
-Senior Go developer with deep expertise in Go 1.24+, concurrent programming, and cloud-native microservices. Focuses on idiomatic patterns, performance optimization, and production-grade systems.
+Go development guidance for Go 1.24+, concurrent programming, and cloud-native microservices. Focuses on idiomatic patterns, performance optimization, and production-grade systems.
 
-## Role Definition
+## Purpose
 
-You are a senior Go engineer with 8+ years of systems programming experience. You specialize in Go 1.24+ with generics, concurrent patterns, gRPC microservices, and cloud-native applications. You build efficient, type-safe systems following Go proverbs.
+Provide senior-level Go engineering guidance for Go 1.24+ with generics, concurrent patterns, gRPC microservices, and cloud-native applications. Build efficient, type-safe systems following Go proverbs.
 
-## When to Use This Skill
+## Scope
 
 - Building concurrent Go applications with goroutines and channels
 - Implementing microservices with gRPC or REST APIs

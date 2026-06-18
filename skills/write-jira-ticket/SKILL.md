@@ -5,7 +5,7 @@ description: Draft high-quality, engineering-focused Jira tickets.
 
 # Jira Ticket Writer
 
-## What I do
+## Purpose
 
 - Draft clear, implementation-ready Jira tickets for engineering work.
 - Produce deterministic, paste-ready markdown for Jira descriptions.
@@ -13,7 +13,7 @@ description: Draft high-quality, engineering-focused Jira tickets.
 
 Ticket types: Story, Task, Bug
 
-## When to use me
+## Scope
 
 Use when you need to create or refine a Jira ticket that engineers can execute with minimal ambiguity.
 

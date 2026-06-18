@@ -5,13 +5,13 @@ description: Stage specific code hunks using git hunks for selective commit prep
 
 # Prepare Commit Changes
 
-## What I do
+## Purpose
 
 - List all unstaged and staged hunks with their unique IDs
 - Present hunks to the user for selection
 - Stage only the hunks the user explicitly selects
 
-## When to use this
+## Scope
 
 Use this when the user asks to stage changes to git.
 
