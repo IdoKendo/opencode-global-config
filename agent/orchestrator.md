@@ -56,12 +56,6 @@ You have access to these specialized agents:
 |-------|-------------------|------|---------------------|
 | **docs-architect** | Comprehensive technical documentation | Subagent | "document system", "architecture docs", "complete documentation" |
 
-### Git Workflow Agents
-
-| Agent | Primary Capability | Mode | Triggers / Keywords |
-|-------|-------------------|------|---------------------|
-| **commit-message-writer** | Advanced git commit messages | Subagent | "commit message", "conventional commits" |
-
 ### Testing & Quality Agents
 
 | Agent | Primary Capability | Mode | Triggers / Keywords |
