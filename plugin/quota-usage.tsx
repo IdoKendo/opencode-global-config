@@ -26,6 +26,7 @@ type QuotaEntry = {
     name: string
     remaining: number
     unit: string
+    progress?: number
     window?: string
     reset?: string
     info?: string
@@ -36,6 +37,11 @@ type RateLimitWindowSnapshot = {
     limit_window_seconds?: number | string
     reset_after_seconds?: number | string
     reset_at?: number | string
+}
+
+type ResetCreditSnapshot = {
+    status?: unknown
+    expires_at?: unknown
 }
 
 const tui: TuiPlugin = async (api) => {
@@ -100,6 +106,11 @@ function QuotaUsagePanel(props: { api: Parameters<TuiPlugin>[0]; state: () => Us
             {data().map((entry) => (
                 <box flexDirection="column">
                     <text fg={theme.textMuted}>{formatQuotaEntry(entry)}</text>
+                    {entry.progress !== undefined ? (
+                        <box height={1} width="100%" backgroundColor={theme.backgroundElement}>
+                            {entry.progress > 0 ? <box height={1} width={`${entry.progress}%`} backgroundColor={theme.info} /> : null}
+                        </box>
+                    ) : null}
                     {entry.reset ? <text fg={theme.textMuted}>  {entry.reset}</text> : null}
                 </box>
             ))}
@@ -121,8 +132,13 @@ async function loadQuotaUsage(): Promise<QuotaEntry[]> {
     if (!oauth) throw new Error("OpenAI OAuth credentials missing in opencode auth.json")
 
     const baseUrl = process.env.OPENCODE_CODEX_BASE_URL ?? oauth.enterpriseUrl ?? DEFAULT_BASE_URL
-    const payload = await fetchQuotaPayload(oauth.access, baseUrl)
+    const [payload, resetCredits] = await Promise.all([
+        fetchQuotaPayload(oauth.access, baseUrl),
+        fetchResetCreditsPayload(oauth.access, baseUrl).catch(() => null),
+    ])
     const entries = extractQuotaEntries(payload)
+    const resetCreditEntry = extractResetCreditEntry(resetCredits)
+    if (resetCreditEntry) entries.push(resetCreditEntry)
     if (entries.length === 0) throw new Error("Quota payload did not include rate limits")
     return entries
 }
@@ -148,12 +164,23 @@ function pickOauthAuth(auth: AuthFile) {
 }
 
 async function fetchQuotaPayload(accessToken: string, baseUrl: string): Promise<unknown> {
+    return fetchJson(buildUsageUrl(baseUrl), accessToken)
+}
+
+async function fetchResetCreditsPayload(accessToken: string, baseUrl: string): Promise<unknown> {
+    return fetchJson(buildResetCreditsUrl(baseUrl), accessToken, {
+        "OpenAI-Beta": "codex-1",
+        originator: "Codex Desktop",
+    })
+}
+
+async function fetchJson(url: string, accessToken: string, headers: Record<string, string> = {}): Promise<unknown> {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 15_000)
 
     try {
-        const response = await fetch(buildUsageUrl(baseUrl), {
-            headers: { Authorization: `Bearer ${accessToken}` },
+        const response = await fetch(url, {
+            headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json", ...headers },
             signal: controller.signal,
         })
         const bodyText = await response.text()
@@ -169,6 +196,12 @@ async function fetchQuotaPayload(accessToken: string, baseUrl: string): Promise<
 function buildUsageUrl(baseUrl: string) {
     const trimmed = baseUrl.replace(/\/+$/, "")
     return trimmed.includes("/backend-api") ? `${trimmed}/wham/usage` : `${trimmed}/api/codex/usage`
+}
+
+function buildResetCreditsUrl(baseUrl: string) {
+    const trimmed = baseUrl.replace(/\/+$/, "")
+    const normalized = /https:\/\/(chatgpt\.com|chat\.openai\.com)$/.test(trimmed) ? `${trimmed}/backend-api` : trimmed
+    return `${normalized}/wham/rate-limit-reset-credits`
 }
 
 function extractQuotaEntries(payload: unknown): QuotaEntry[] {
@@ -196,6 +229,7 @@ function parseRateLimitWindow(id: string, label: string, snapshot: RateLimitWind
     const used = toNumber(snapshot.used_percent)
     if (used === null) return null
 
+    const remaining = Math.max(0, Math.min(100, 100 - used))
     const resetAfter = toNumber(snapshot.reset_after_seconds)
     const resetAt = toNumber(snapshot.reset_at)
     const windowSeconds = toNumber(snapshot.limit_window_seconds)
@@ -203,10 +237,36 @@ function parseRateLimitWindow(id: string, label: string, snapshot: RateLimitWind
     return {
         id,
         name: label,
-        remaining: Math.max(0, Math.min(100, 100 - used)),
+        remaining,
         unit: "%",
+        progress: remaining,
         window: windowSeconds ? describeWindow(windowSeconds) : undefined,
         reset: resetAfter !== null ? `resets in ${formatRelativeSeconds(resetAfter)}` : resetAt !== null ? `resets at ${new Date(resetAt * 1000).toLocaleTimeString()}` : undefined,
+    }
+}
+
+function extractResetCreditEntry(payload: unknown): QuotaEntry | null {
+    if (!isObject(payload)) return null
+    const availableCount = toNumber(payload.available_count)
+    if (availableCount === null || availableCount < 0) return null
+
+    const now = Date.now()
+    const expiries = Array.isArray(payload.credits)
+        ? payload.credits
+            .filter((credit): credit is ResetCreditSnapshot => isObject(credit) && credit.status === "available")
+            .map((credit) => typeof credit.expires_at === "string" ? Date.parse(credit.expires_at) : Number.NaN)
+            .filter((expiresAt) => Number.isFinite(expiresAt) && expiresAt > now)
+            .sort((left, right) => left - right)
+        : []
+    const expirySummary = expiries.slice(0, 4).map((expiresAt) => formatRelativeSeconds(Math.ceil((expiresAt - now) / 1000)))
+    if (expiries.length > 4) expirySummary.push(`+${expiries.length - 4}`)
+
+    return {
+        id: "reset-credits",
+        name: "Limit Reset Credits",
+        remaining: availableCount,
+        unit: " available",
+        reset: expirySummary.length > 0 ? `expires in ${expirySummary.join(" | ")}` : undefined,
     }
 }
 
