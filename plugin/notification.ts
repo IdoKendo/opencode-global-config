@@ -13,6 +13,10 @@ type RuntimeEvent = {
             id?: string;
             parentID?: string;
         };
+        questions?: Array<{
+            header?: string;
+            question?: string;
+        }>;
         part?: {
             type?: string;
             sessionID?: string;
@@ -78,6 +82,23 @@ export const NotificationPlugin = async ({ $, project, client, directory, worktr
                         }
                     } else if (platform === "linux") {
                         await $`notify-send ${title} ${msg}`;
+                        if (soundEnabled) {
+                            await $`paplay /usr/share/sounds/freedesktop/stereo/complete.oga 2>/dev/null || true`;
+                        }
+                    }
+                    break;
+                case "question.asked":
+                    const question = event.properties?.questions?.[0];
+                    if (!question?.header || !question.question) break;
+
+                    const questionTitle = `Question: ${question.header}`;
+                    if (platform === "darwin") {
+                        await $`osascript -e 'display notification ${JSON.stringify(question.question)} with title ${JSON.stringify(questionTitle)}'`;
+                        if (soundEnabled) {
+                            await $`afplay /System/Library/Sounds/Blow.aiff 2>/dev/null || true`;
+                        }
+                    } else if (platform === "linux") {
+                        await $`notify-send ${questionTitle} ${question.question}`;
                         if (soundEnabled) {
                             await $`paplay /usr/share/sounds/freedesktop/stereo/complete.oga 2>/dev/null || true`;
                         }
