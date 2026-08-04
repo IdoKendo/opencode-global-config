@@ -5,14 +5,6 @@ description: Proactively simplify recently modified code while preserving exact 
 
 # Simplify Code
 
-## Purpose
-
-Simplify recently modified code to improve clarity, consistency, and maintainability without changing behavior.
-
-## Scope
-
-Use this skill proactively after code is written or modified, unless the user asks for a different scope.
-
 ## Principles
 
 1. Preserve behavior exactly. Do not change outputs, side effects, or external contracts.

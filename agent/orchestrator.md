@@ -2,18 +2,10 @@
 description: Router-only coordinator that delegates all work to subagents
 mode: primary
 temperature: 0.1
-tools:
-  bash: false
-  edit: false
-  write: false
-  skill: false
-  webfetch: false
 permission:
   edit: deny
-  write: deny
   bash:
     "*": deny
-  skill: deny
   webfetch: deny
 ---
 

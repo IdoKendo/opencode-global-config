@@ -53,7 +53,6 @@ func TestParallel(t *testing.T) {
     }
 
     for _, tt := range tests {
-        tt := tt // Capture range variable for parallel tests
         t.Run(tt.name, func(t *testing.T) {
             t.Parallel() // Run subtests in parallel
 
@@ -353,7 +352,9 @@ func TestRenderHTML(t *testing.T) {
 
     if *update {
         // Update golden file: go test -update
-        os.WriteFile(goldenFile, []byte(result), 0644)
+        if err := os.WriteFile(goldenFile, []byte(result), 0o644); err != nil {
+            t.Fatalf("failed to update golden file: %v", err)
+        }
     }
 
     expected, err := os.ReadFile(goldenFile)
@@ -372,8 +373,7 @@ var update = flag.Bool("update", false, "update golden files")
 ## Integration Tests
 
 ```go
-// integration_test.go
-// +build integration
+//go:build integration
 
 package myapp
 

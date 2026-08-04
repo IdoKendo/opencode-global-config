@@ -12,6 +12,7 @@ import (
     ctrl "sigs.k8s.io/controller-runtime"
     "sigs.k8s.io/controller-runtime/pkg/healthz"
     "sigs.k8s.io/controller-runtime/pkg/log/zap"
+    metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 func main() {
@@ -19,7 +20,9 @@ func main() {
 
     mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
         Scheme:                 scheme,
-        MetricsBindAddress:     ":8080",
+        Metrics: metricsserver.Options{
+            BindAddress: ":8080",
+        },
         HealthProbeBindAddress: ":8081",
         LeaderElection:         true,
         LeaderElectionID:       "example-controller",

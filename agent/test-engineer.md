@@ -2,10 +2,14 @@
 description: Test strategy and test-writing specialist focused on coverage and behavior
 mode: subagent
 temperature: 0.2
-tools:
-  bash: false
 permission:
-  bash: deny
+  bash:
+    "*": deny
+    "pytest*": allow
+    "uv run pytest*": allow
+    "go test*": allow
+    "cargo test*": allow
+    "make test*": allow
 ---
 
 # Test Engineer

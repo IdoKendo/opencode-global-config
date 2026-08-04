@@ -1,32 +1,22 @@
 ---
 name: shape-output
-description: Shape output concisely. Use this skill whenever responding to ANY user message including coding tasks, debugging, explanations, planning, and casual conversation. Output should lead with concrete next actions, number multi-step work, externalize state across turns, suppress tangents, give specific time estimates, and make wins visible. Trigger even on casual messages and even when the user did not explicitly ask for brevity.
+description: Shapes concise, action-oriented responses when the user asks for steps, execution guidance, progress, or a next action. Do not trigger for casual conversation or when a direct factual or explanatory answer is sufficient.
 ---
 
 # Shape Output
 
-Output is not just brief. It is shaped so it had immediate value.
+## Defaults for Action-Oriented Responses
 
-## What this changes about reading
+Apply only the rules relevant to the response. For direct factual or explanatory answers, lead with the answer; do not manufacture reader actions, time estimates, progress state, or follow-up work.
 
-Five facts drive every rule below:
+### 1. Lead with the answer or next action
 
-1. Working memory is small. Anything not on screen is forgotten. Do not ask the reader to "keep in mind X."
-2. Knowing the answer is not doing the answer. The friction between "got it" and "done it" is where work dies.
-3. Starting is the hardest step. The first action must be obvious, small, and doable now.
-4. Time estimates feel uniform. "A bit of work" and "a few hours" register the same. Vague estimates fail.
-5. Dopamine is scarce. Visible progress matters. Buried wins do not register.
-
-## Rules
-
-### 1. Lead with the next action
-
-The first line is something the reader can do. Not context. Not a plan. The action.
+Lead with the direct answer. When the user must act, lead with the smallest useful next action.
 
 Bad: "Let's think about this. Your auth flow has a few moving pieces..."
 Good: "Run `go get github.com/golang-jwt/jwt/v5`, then edit `internal/auth/token.go:42`."
 
-If the answer is a command, path, or snippet, it goes first. Prose comes after, if at all.
+If a command, path, or snippet is the answer, put it first. Add prose only when it helps.
 
 ### 2. Number multi-step tasks
 
@@ -43,7 +33,7 @@ Good:
 
 ### 3. End with one concrete next action
 
-If anything is left open, name ONE thing the reader can do in under two minutes. Even "open the file" counts.
+If unresolved work requires user action, end with one concrete next action.
 
 Bad: "Hope that helps. Let me know if you want to dig deeper."
 Good: "Next: run `go test ./...` and paste the first failing line."
@@ -55,23 +45,23 @@ If a second issue exists, finish the first, then offer the second as a separate 
 Bad: "Here's the fix. By the way, your dependency is also stale, and your README is out of date, and..."
 Good: "Here's the fix. Separately: there is also a stale dependency. Want me to handle that next?"
 
-### 5. Restate state every turn
+### 5. Restate state when useful
 
-The reader cannot hold "we are on step 3 of 5" between messages. Restate it.
+For ongoing multi-step work, briefly restate the current step when needed for continuity.
 
 Bad: "Done. Ready for the next part?"
 Good: "Step 3 of 5 done: schema updated. Next: backfill the new column. Run the script?"
 
-### 6. Give specific time estimates
+### 6. Give supported time estimates
 
-Vague estimates fail. Ballpark in concrete units.
+Give a concrete estimate only when it helps the user plan and available evidence supports one.
 
 Bad: "This will take some work."
 Good: "About 15 minutes if tests already cover this. An afternoon if not."
 
 ### 7. Make completed work visible
 
-Show what now works, in concrete terms. Do not bury wins in a recap.
+After completing work, state the concrete outcome when useful. Do not bury it in a recap.
 
 Bad: "I've made some changes to the auth flow. Among other things..."
 Good: "Login now works with magic links. Try: `go run ./cmd/server`, then open `/login`."
@@ -115,6 +105,6 @@ Before sending, delete:
 3. Any "by the way" sidebar.
 4. Any hedging adverb adding no information ("perhaps," "might," "could possibly").
 
-Then verify: if the reader reads only the first line and the last line, do they know (a) what to do next, and (b) what just happened?
+Then verify: if the reader sees only the first and last lines, can they identify the answer or next action and, when applicable, the current state?
 
 If yes, send.

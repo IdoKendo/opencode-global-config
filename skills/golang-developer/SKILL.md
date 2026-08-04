@@ -1,45 +1,17 @@
 ---
 name: golang-developer
-description: Use when building Go applications requiring concurrent programming, microservices architecture, or high-performance systems. Invoke for goroutines, channels, Go generics, gRPC integration.
-triggers:
-  - Go
-  - Golang
-  - goroutines
-  - channels
-  - gRPC
-  - microservices Go
-  - Go generics
-  - concurrent programming
-  - Go interfaces
-role: specialist
-scope: implementation
-output-format: code
+description: Use when building or modifying Go applications, especially for goroutines, channels, interfaces, generics, gRPC, microservices, or performance-sensitive systems.
 ---
 
 # Golang Developer
 
-Go development guidance for Go 1.24+, concurrent programming, and cloud-native microservices. Focuses on idiomatic patterns, performance optimization, and production-grade systems.
-
-## Purpose
-
-Provide senior-level Go engineering guidance for Go 1.24+ with generics, concurrent patterns, gRPC microservices, and cloud-native applications. Build efficient, type-safe systems following Go proverbs.
-
-## Scope
-
-- Building concurrent Go applications with goroutines and channels
-- Implementing microservices with gRPC or REST APIs
-- Creating CLI tools and system utilities
-- Optimizing Go code for performance and memory efficiency
-- Designing interfaces and using Go generics
-- Setting up testing with table-driven tests and benchmarks
-
 ## Core Workflow
 
-1. Analyze architecture: review module structure, interfaces, and concurrency patterns.
-2. Design interfaces: create small, focused interfaces with composition.
-3. Implement: write idiomatic Go with proper error handling and context propagation.
-4. Optimize: profile with pprof, write benchmarks, and eliminate allocations.
-5. Test: use table-driven tests, the race detector, fuzzing, and 80%+ coverage.
+1. Inspect the module, supported Go version, existing conventions, and affected behavior.
+2. Preserve existing package boundaries; introduce an interface only when it provides a concrete abstraction or testing boundary.
+3. Implement the smallest idiomatic change with intentional error handling.
+4. Accept and propagate `context.Context` for request-scoped or cancellable operations; do not add it where cancellation or deadlines cannot be used.
+5. Select validation appropriate to the change. Profile before optimizing performance-sensitive code.
 
 ## Reference Guide
 
@@ -52,36 +24,20 @@ Load detailed guidance based on context:
 | Generics | `references/generics.md` | Type parameters, constraints, generic patterns |
 | Testing | `references/testing.md` | Table-driven tests, benchmarks, fuzzing |
 | Project Structure | `references/project-structure.md` | Module layout, internal packages, go.mod |
+| Controllers | `references/controllers.md` | Kubernetes controllers, reconciliation, controller-runtime |
 
-## Constraints
+## Contextual Practices
 
-### MUST DO
-- Use gofmt and golangci-lint on all code
-- Add context.Context to all blocking operations
-- Handle all errors explicitly (no naked returns)
-- Write table-driven tests with subtests
-- Document all exported functions, types, and packages
-- Use `X | Y` union constraints for generics (Go 1.18+)
-- Propagate errors with fmt.Errorf("%w", err)
-- Run race detector on tests (-race flag)
+- Run `gofmt` on changed Go files and use the linters already configured by the repository.
+- Use table-driven tests and subtests when they improve coverage and readability.
+- Run `-race` for concurrency-related changes or when required by the repository.
+- Use fuzzing for suitable parsers, decoders, and invariant-heavy inputs.
+- Treat coverage as evidence of exercised behavior, not a fixed percentage target.
+- Wrap errors with `%w` when adding useful context while preserving error-chain semantics.
+- Document exported declarations according to the project's API and linting conventions.
+- Use generics, reflection, functional options, environment configuration, and interfaces only when justified by the requirements and existing design.
+- Do not ignore errors, leak goroutines, or use panic for expected failures without an explicit reason.
 
-### MUST NOT DO
-- Ignore errors (avoid _ assignment without justification)
-- Use panic for normal error handling
-- Create goroutines without clear lifecycle management
-- Skip context cancellation handling
-- Use reflection without performance justification
-- Mix sync and async patterns carelessly
-- Hardcode configuration (use functional options or env vars)
+## Output
 
-## Output Templates
-
-When implementing Go features, provide:
-1. Interface definitions (contracts first)
-2. Implementation files with proper package structure
-3. Test file with table-driven tests
-4. Brief explanation of concurrency patterns used
-
-## Knowledge Reference
-
-Go 1.24+, goroutines, channels, select, sync package, generics, type parameters, constraints, io.Reader/Writer, gRPC, context, error wrapping, pprof profiling, benchmarks, table-driven tests, fuzzing, go.mod, internal packages, functional options
+Provide only the implementation artifacts required by the task. Explain concurrency, interface, or performance decisions when those concerns are materially involved.

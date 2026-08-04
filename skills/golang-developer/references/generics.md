@@ -8,8 +8,13 @@
 ```go
 package main
 
+import (
+    "cmp"
+    "fmt"
+)
+
 // Generic function with type parameter
-func Max[T constraints.Ordered](a, b T) T {
+func Max[T cmp.Ordered](a, b T) T {
     if a > b {
         return a
     }
@@ -40,11 +45,12 @@ func main() {
 ## Type Constraints
 
 ```go
-import "constraints"
-
-// Built-in constraints
+// Numeric types supported by Sum, including user-defined types with these
+// underlying types.
 type Number interface {
-    constraints.Integer | constraints.Float
+    ~int | ~int8 | ~int16 | ~int32 | ~int64 |
+        ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr |
+        ~float32 | ~float64
 }
 
 func Sum[T Number](numbers []T) T {
@@ -313,6 +319,8 @@ func ProcessContainer[T any](c Container[T], item T) {
 ## Type Inference
 
 ```go
+import "cmp"
+
 // Type inference works in most cases
 func Identity[T any](x T) T {
     return x
@@ -323,7 +331,7 @@ result := Identity(42)          // T inferred as int
 str := Identity("hello")        // T inferred as string
 
 // Type inference with constraints
-func Min[T constraints.Ordered](a, b T) T {
+func Min[T cmp.Ordered](a, b T) T {
     if a < b {
         return a
     }
@@ -440,6 +448,6 @@ func Serialize[T Serializable](data T) []byte {
 | Constraint | `func F[T Constraint]()` | Restricted types |
 | Multiple params | `func F[T, U any]()` | Multiple type variables |
 | Comparable | `func F[T comparable]()` | Types supporting == and != |
-| Ordered | `func F[T constraints.Ordered]()` | Types supporting <, >, <=, >= |
+| Ordered | `func F[T cmp.Ordered]()` | Types supporting <, >, <=, >= |
 | Union | `T interface{int \| string}` | Either type |
 | Approximate | `~int` | Include type aliases |

@@ -5,19 +5,10 @@ description: Use when implementing code changes, bug fixes, refactors, or multi-
 
 # Atomic Code Changes
 
-## Purpose
-
-Keep each implementation step small enough to review, verify, and revert without dragging unrelated concerns along with it.
-
-## Core Principle
-
-One change should have one reason to exist.
-
-If the work needs multiple reasons, split it into multiple changes before editing.
-
 ## Scope
 
-- Applies to implementation work: fixes, features, refactors, migrations, tests, and docs tied to a code change.
+- Keep each implementation step single-purpose, reviewable, verifiable, and independently reversible.
+- Apply this workflow to fixes, features, refactors, migrations, tests, and docs tied to a code change.
 - Use the smallest practical unit that still leaves the system coherent.
 - Stop at task boundaries; do not roll adjacent cleanups, formatting sweeps, or opportunistic fixes into the same change.
 - If a requested change is naturally broad, decompose it into ordered atomic steps first.

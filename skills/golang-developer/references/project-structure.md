@@ -88,17 +88,15 @@ go mod why github.com/user/package
 # Vendor dependencies (copy to vendor/)
 go mod vendor
 
-# Update dependency
-go get -u github.com/user/package
+# Discover available updates without changing go.mod
+go list -m -u all
 
-# Update to specific version
+# Apply a reviewed, explicit version
 go get github.com/user/package@v1.2.3
 
-# Update all dependencies
-go get -u ./...
-
-# Remove unused dependencies
+# Reconcile module files and validate the update
 go mod tidy
+go test ./...
 ```
 
 ## Internal Packages
@@ -210,8 +208,7 @@ use (
 ## Build Tags and Constraints
 
 ```go
-// +build integration
-// integration_test.go
+//go:build integration
 
 package myapp
 
@@ -222,24 +219,13 @@ func TestIntegration(t *testing.T) {
 }
 
 // Build: go test -tags=integration
-
-// File-level build constraints (Go 1.24+)
-//go:build linux && amd64
-
-package myapp
-
-// Multiple constraints
-//go:build linux || darwin
-//go:build amd64
-
-// Negation
-//go:build !windows
-
-// Common tags:
-// linux, darwin, windows, freebsd
-// amd64, arm64, 386, arm
-// cgo, !cgo
 ```
+
+Each file may contain one `//go:build` line, followed by a blank line before the package declaration. Combine conditions in that single expression, for example:
+
+- Linux on AMD64: `//go:build linux && amd64`
+- Linux or macOS on AMD64: `//go:build (linux || darwin) && amd64`
+- Any non-Windows target: `//go:build !windows`
 
 ## Makefile Example
 
@@ -321,9 +307,11 @@ help:
 
 ## Dockerfile Multi-Stage Build
 
+Resolve and review immutable digests for the target platform before using this template; update them deliberately through dependency-update reviews.
+
 ```dockerfile
 # Build stage
-FROM golang:1.24-alpine AS builder
+FROM golang:1.24-alpine@sha256:<reviewed-builder-digest> AS builder
 
 WORKDIR /app
 
@@ -338,7 +326,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o server ./cmd/server
 
 # Final stage
-FROM alpine:latest
+FROM alpine:3.21@sha256:<reviewed-runtime-digest>
 
 RUN apk --no-cache add ca-certificates
 

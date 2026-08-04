@@ -19,19 +19,9 @@ description: >-
 
 # Documentation Lookup
 
-Retrieve current documentation and code examples for any library using the Context7 CLI.
+Retrieve current documentation and code examples using an already available Context7 CLI.
 
-Make sure the CLI is up to date before running commands:
-
-```bash
-npm install -g ctx7@latest
-```
-
-Or run directly without installing:
-
-```bash
-npx ctx7@latest <command>
-```
+Do not install or upgrade Context7 as part of a documentation lookup. If `ctx7` is unavailable, report that limitation and use another authoritative documentation source. Install or upgrade it only after the user explicitly requests and approves that environment change.
 
 ## Workflow
 
