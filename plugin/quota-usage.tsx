@@ -15,7 +15,7 @@ type UsageState =
     | { status: "error"; updated: number; data?: QuotaEntry[]; message: string }
 
 type AuthInfo =
-    | { type: "oauth"; access: string; enterpriseUrl?: string }
+    | { type: "oauth"; access: string; expires?: number; accountId?: string; enterpriseUrl?: string }
     | { type: "api"; key: string }
     | { type: "wellknown"; key: string; token: string }
 
@@ -133,8 +133,8 @@ async function loadQuotaUsage(): Promise<QuotaEntry[]> {
 
     const baseUrl = process.env.OPENCODE_CODEX_BASE_URL ?? oauth.enterpriseUrl ?? DEFAULT_BASE_URL
     const [payload, resetCredits] = await Promise.all([
-        fetchQuotaPayload(oauth.access, baseUrl),
-        fetchResetCreditsPayload(oauth.access, baseUrl).catch(() => null),
+        fetchQuotaPayload(oauth, baseUrl),
+        fetchResetCreditsPayload(oauth, baseUrl).catch(() => null),
     ])
     const entries = extractQuotaEntries(payload)
     const resetCreditEntry = extractResetCreditEntry(resetCredits)
@@ -155,32 +155,35 @@ function getDataDirectory() {
 }
 
 function pickOauthAuth(auth: AuthFile) {
-    for (const providerID of ["opencode", "codex", "openai"]) {
+    for (const providerID of ["openai", "codex"]) {
         const info = auth[providerID]
-        if (info?.type === "oauth") return info
+        if (info?.type === "oauth" && (!info.expires || info.expires > Date.now())) return info
     }
-
-    return Object.values(auth).find((info) => info.type === "oauth")
 }
 
-async function fetchQuotaPayload(accessToken: string, baseUrl: string): Promise<unknown> {
-    return fetchJson(buildUsageUrl(baseUrl), accessToken)
+async function fetchQuotaPayload(oauth: Extract<AuthInfo, { type: "oauth" }>, baseUrl: string): Promise<unknown> {
+    return fetchJson(buildUsageUrl(baseUrl), oauth)
 }
 
-async function fetchResetCreditsPayload(accessToken: string, baseUrl: string): Promise<unknown> {
-    return fetchJson(buildResetCreditsUrl(baseUrl), accessToken, {
+async function fetchResetCreditsPayload(oauth: Extract<AuthInfo, { type: "oauth" }>, baseUrl: string): Promise<unknown> {
+    return fetchJson(buildResetCreditsUrl(baseUrl), oauth, {
         "OpenAI-Beta": "codex-1",
         originator: "Codex Desktop",
     })
 }
 
-async function fetchJson(url: string, accessToken: string, headers: Record<string, string> = {}): Promise<unknown> {
+async function fetchJson(url: string, oauth: Extract<AuthInfo, { type: "oauth" }>, headers: Record<string, string> = {}): Promise<unknown> {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 15_000)
 
     try {
         const response = await fetch(url, {
-            headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json", ...headers },
+            headers: {
+                Authorization: `Bearer ${oauth.access}`,
+                Accept: "application/json",
+                ...(oauth.accountId ? { "ChatGPT-Account-Id": oauth.accountId } : {}),
+                ...headers,
+            },
             signal: controller.signal,
         })
         const bodyText = await response.text()
