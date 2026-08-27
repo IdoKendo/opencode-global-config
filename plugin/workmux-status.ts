@@ -1,5 +1,21 @@
 import type { Plugin } from '@opencode-ai/plugin';
 
+type RuntimeEvent = {
+  type: string;
+  properties?: {
+    [key: string]: unknown;
+    sessionID?: string;
+    info?: {
+      [key: string]: unknown;
+      role?: string;
+      sessionID?: string;
+    };
+    status?: {
+      type: string;
+    };
+  };
+};
+
 export const WorkmuxStatusPlugin: Plugin = async ({ $ }) => {
   // OpenCode can emit repeated `session.status busy` events for a single turn,
   // and can even emit a stale trailing `busy` after `idle` at the end. Track
@@ -36,30 +52,33 @@ export const WorkmuxStatusPlugin: Plugin = async ({ $ }) => {
   }
 
   return {
-    event: async ({ event }) => {
-      if (event.type === 'message.updated' && event.properties.info.role === 'user') {
-        acceptBusyBySession.set(event.properties.sessionID, true);
+    event: async ({ event }: { event: RuntimeEvent }) => {
+      const messageSessionID = event.properties?.info?.sessionID;
+      if (event.type === 'message.updated' && event.properties?.info?.role === 'user' && messageSessionID) {
+        acceptBusyBySession.set(messageSessionID, true);
       }
+
+      const sessionID = event.properties?.sessionID;
 
       switch (event.type) {
         case 'session.status':
-          if (event.properties.status.type === 'busy') {
-            await setStatus(event.properties.sessionID, 'working');
+          if (event.properties?.status?.type === 'busy') {
+            await setStatus(sessionID, 'working');
           }
-          if (event.properties.status.type === 'idle') {
-            await setStatus(event.properties.sessionID, 'done');
+          if (event.properties?.status?.type === 'idle') {
+            await setStatus(sessionID, 'done');
           }
           break;
         case 'permission.asked':
         case 'question.asked':
-          await setStatus(event.properties.sessionID, 'waiting');
+          await setStatus(sessionID, 'waiting');
           break;
         case 'permission.replied':
         case 'question.replied':
-          await setStatus(event.properties.sessionID, 'working');
+          await setStatus(sessionID, 'working');
           break;
         case 'session.idle':
-          await setStatus(event.properties.sessionID, 'done');
+          await setStatus(sessionID, 'done');
           break;
       }
     },
