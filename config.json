@@ -16,15 +16,22 @@
             "enabled": false,
             "type": "remote",
             "url": "https://gitlab.com/api/v4/mcp"
-        }
-    },
-    "agent": {
-        "build": {
-            "permission": {
-                "skill": {
-                    "conventional-commits": "allow",
-                    "prepare-commit-changes": "allow"
-                }
+        },
+        "coralogix": {
+            "enabled": false,
+            "type": "remote",
+            "url": "https://api.eu2.coralogix.com/mgmt/api/v1/mcp"
+        },
+        "grafana": {
+            "enabled": false,
+            "type": "local",
+            "command": [
+                "uvx",
+                "mcp-grafana"
+            ],
+            "environment": {
+                "GRAFANA_URL": "http://localhost:3000",
+                "GRAFANA_SERVICE_ACCOUNT_TOKEN": "{env:GRAFANA_SERVICE_ACCOUNT_TOKEN}"
             }
         }
     }
