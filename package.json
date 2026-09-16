@@ -15,7 +15,7 @@
         "quality": "npm run quality:config-parse && npm run quality:secret-scan && npm run quality:agent-permissions && npm run quality:skill-safety && npm run quality:runtime"
     },
     "dependencies": {
-        "@opencode-ai/plugin": "^1.17.8",
+        "@opencode-ai/plugin": "1.18.29",
         "@opentui/core": "^0.4.3",
         "@opentui/solid": "^0.4.3",
         "solid-js": "1.9.12"
