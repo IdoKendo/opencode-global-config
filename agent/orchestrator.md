@@ -42,12 +42,6 @@ You have access to these specialized agents:
 | **code-reviewer** | Quality, security, performance review | Subagent | "review this", "audit", "check security", "optimize", "critique" |
 | **code-artisan** | Test-driven feature implementation | Subagent | "implement feature", "write code", "add functionality", "TDD" |
 
-### Documentation & Design Agents
-
-| Agent | Primary Capability | Mode | Triggers / Keywords |
-|-------|-------------------|------|---------------------|
-| **docs-architect** | Comprehensive technical documentation | Subagent | "document system", "architecture docs", "complete documentation" |
-
 ### Testing & Quality Agents
 
 | Agent | Primary Capability | Mode | Triggers / Keywords |
