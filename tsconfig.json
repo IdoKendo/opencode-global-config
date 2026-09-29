@@ -10,6 +10,6 @@
     "types": ["node"],
     "noEmit": true
   },
-  "include": ["plugin/**/*.ts", "plugin/**/*.tsx"],
+  "include": ["plugins/**/*.ts", "plugins/**/*.tsx"],
   "exclude": ["node_modules"]
 }

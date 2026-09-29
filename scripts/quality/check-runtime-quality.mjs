@@ -10,7 +10,7 @@ function runCommand(command, args) {
   });
 }
 
-const runtimeFiles = walkFiles().filter((file) => file.relativePath.startsWith("plugin/") && /\.(?:js|mjs|cjs|ts|tsx)$/.test(file.relativePath));
+const runtimeFiles = walkFiles().filter((file) => file.relativePath.startsWith("plugins/") && /\.(?:js|mjs|cjs|ts|tsx)$/.test(file.relativePath));
 const jsFiles = runtimeFiles.filter((file) => /\.(?:js|mjs|cjs)$/.test(file.relativePath));
 const tsFiles = runtimeFiles.filter((file) => /\.(?:ts|tsx)$/.test(file.relativePath));
 

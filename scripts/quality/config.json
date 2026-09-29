@@ -1,17 +1,17 @@
 {
   "agentPermissionExemptions": [
-    { "file": "agent/bug-hunter.md", "pattern": "ls *" },
-    { "file": "agent/bug-hunter.md", "pattern": "which *" },
-    { "file": "agent/bug-hunter.md", "pattern": "rg *" },
-    { "file": "agent/bug-hunter.md", "pattern": "cat *" },
-    { "file": "agent/bug-hunter.md", "pattern": "head *" },
-    { "file": "agent/bug-hunter.md", "pattern": "tail *" },
-    { "file": "agent/bug-hunter.md", "pattern": "jk *" },
-    { "file": "agent/code-artisan.md", "pattern": "ls *" },
-    { "file": "agent/code-artisan.md", "pattern": "which *" },
-    { "file": "agent/code-artisan.md", "pattern": "rg *" },
-    { "file": "agent/code-artisan.md", "pattern": "cat *" },
-    { "file": "agent/code-artisan.md", "pattern": "head *" },
-    { "file": "agent/code-artisan.md", "pattern": "tail *" }
+    { "file": "agents/bug-hunter.md", "pattern": "ls *" },
+    { "file": "agents/bug-hunter.md", "pattern": "which *" },
+    { "file": "agents/bug-hunter.md", "pattern": "rg *" },
+    { "file": "agents/bug-hunter.md", "pattern": "cat *" },
+    { "file": "agents/bug-hunter.md", "pattern": "head *" },
+    { "file": "agents/bug-hunter.md", "pattern": "tail *" },
+    { "file": "agents/bug-hunter.md", "pattern": "jk *" },
+    { "file": "agents/code-artisan.md", "pattern": "ls *" },
+    { "file": "agents/code-artisan.md", "pattern": "which *" },
+    { "file": "agents/code-artisan.md", "pattern": "rg *" },
+    { "file": "agents/code-artisan.md", "pattern": "cat *" },
+    { "file": "agents/code-artisan.md", "pattern": "head *" },
+    { "file": "agents/code-artisan.md", "pattern": "tail *" }
   ]
 }

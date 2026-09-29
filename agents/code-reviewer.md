@@ -1,12 +1,19 @@
 ---
 description: Adversarial code reviewer focused on quality, security, and maintainability
 mode: subagent
-temperature: 0.1
-permission:
-  edit: deny
-  bash:
-    "*": deny
-  webfetch: deny
+request:
+  body:
+    temperature: 0.1
+permissions:
+  - action: edit
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: "*"
+    effect: deny
+  - action: webfetch
+    resource: "*"
+    effect: deny
 ---
 
 # Code Reviewer

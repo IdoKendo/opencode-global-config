@@ -1,0 +1,22 @@
+{
+  "$schema": "https://opencode.ai/v2/cli.json",
+  "theme": {
+    "name": "tokyonight"
+  },
+  "plugins": [
+    "-opencode.sidebar.mcp",
+    "./plugins/quota-usage/tui.tsx",
+    "./plugins/skills-sidebar/tui.tsx",
+    "./plugins/notification/tui.ts",
+    "./plugins/workmux-status/tui.ts"
+  ],
+  "diffs": {
+    "wrap": "word"
+  },
+  "session": {
+    "sidebar": "auto",
+    "scrollbar": false,
+    "thinking": "hide"
+  },
+  "animations": true
+}

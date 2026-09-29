@@ -1,7 +1,9 @@
 ---
 description: Crafts code through disciplined test-driven development
 mode: subagent
-temperature: 0.2
+request:
+  body:
+    temperature: 0.2
 ---
 
 # Code Artisan
