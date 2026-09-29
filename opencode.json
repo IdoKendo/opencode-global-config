@@ -35,5 +35,8 @@
                 "url": "https://api.eu2.coralogix.com/mgmt/api/v1/mcp"
             }
         }
-    }
+    },
+    "plugins": [
+        "@prevalentware/opencode-goal-plugin"
+    ]
 }
