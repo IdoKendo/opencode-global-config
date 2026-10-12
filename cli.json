@@ -8,10 +8,14 @@
     "./plugins/quota-usage/tui.tsx",
     "./plugins/skills-sidebar/tui.tsx",
     "./plugins/notification/tui.ts",
-    "./plugins/workmux-status/tui.ts"
+    "./plugins/workmux-status/tui.ts",
+    "./plugins/tmux-tabs/tui.ts"
   ],
   "diffs": {
     "wrap": "word"
+  },
+  "tabs": {
+    "mode": "off"
   },
   "session": {
     "sidebar": "auto",
