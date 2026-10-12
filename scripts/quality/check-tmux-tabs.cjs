@@ -25,6 +25,7 @@ test('tmux tab handoff preserves sessions, focus, startup tabs and failure recov
   // Keep test windows alive without starting another OpenCode service or model.
   fs.writeFileSync(path.join(directory, 'opencode'), '#!/bin/sh\nexec /bin/sleep 120\n', { mode: 0o755 });
   await tmux('-f', '/dev/null', 'new-session', '-d', '-s', 'test', '/bin/sleep', '120');
+  await tmux('set-hook', '-g', 'after-new-window', 'rename-window renamed');
   const { stdout: pane } = await tmux('display-message', '-p', '-t', 'test', '#{pane_id}');
   const { stdout: original } = await tmux('display-message', '-p', '-t', 'test', '#{window_id}');
   const windows = async () => (await tmux('list-windows', '-t', 'test', '-F', '#{window_id}')).stdout.trim().split('\n');
@@ -113,8 +114,10 @@ test('tmux tab handoff preserves sessions, focus, startup tabs and failure recov
   assert.match(launch, /--session fork/);
 
   // A newly launched client republishes its startup tab through shared storage.
-  open('fork', false);
-  await waitFor(() => closed.filter(id => id === 'fork').length === 2);
+  await tmux('select-window', '-t', original.trim());
+  open('fork');
+  await waitFor(async () => closed.filter(id => id === 'fork').length === 2 &&
+    (await tmux('display-message', '-p', '-t', 'test', '#{window_id}')).stdout !== original);
   assert.equal((await windows()).length, 2);
 
   await tmux('select-window', '-t', original.trim());

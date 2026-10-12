@@ -112,12 +112,19 @@ export default Plugin.define({
             }
             const { stdout: target } = await run('tmux', ['display-message', '-p', '-t', pane, '#{session_id}']);
             if (!valid()) return;
-            // Tab state is shared across clients. -S atomically reuses the named
-            // window when another client has already handed off this session.
+            // Window titles may be renamed by tmux, OpenCode, or the user. The
+            // launch command still identifies an existing session's pane.
+            const findWindow = async () => {
+              const { stdout } = await run('tmux', ['list-panes', '-s', '-t', target.trim(),
+                '-F', '#{window_id}\t#{pane_start_command}']);
+              return stdout.split('\n').find((line) => line.endsWith(` --session ${tab.sessionID}`))?.split('\t')[0];
+            };
+            const existing = await findWindow();
+            if (!valid()) return;
             const name = `opencode-${tab.sessionID}`;
-            const windowTarget = `${target.trim()}:=${name}`;
             // Multiple command arguments bypass tmux's shell-command parsing.
-            const { stdout } = await run('tmux', [
+            // -S also handles another client creating the window during lookup.
+            const { stdout } = existing ? { stdout: '' } : await run('tmux', [
               'new-window', '-S', '-d', '-P', '-F', '#{window_id}', '-t', `${target.trim()}:`,
               '-c', session.location.directory, '-n', name,
               ...environment, '-e', `OPENCODE_TMUX_SESSION=${tab.sessionID}`,
@@ -127,6 +134,9 @@ export default Plugin.define({
               if (stdout.trim()) await run('tmux', ['kill-window', '-t', stdout.trim()]);
               return;
             }
+            const windowID = existing || stdout.trim() || await findWindow();
+            if (!valid()) return;
+            if (!windowID) throw new Error(`Could not find tmux window for ${tab.sessionID}`);
             const active = ctx.ui.router.current();
             const focused = active.type === 'session' && (enabled
               ? ctx.data.session.root(active.sessionID) === tab.sessionID : active.sessionID === tab.sessionID);
@@ -142,7 +152,7 @@ export default Plugin.define({
                 const fallback = retained.find((item) => item.active) ?? retained[0];
                 ctx.ui.router.navigate(fallback ? { type: 'session', sessionID: fallback.sessionID } : { type: 'home' });
               }
-              await run('tmux', ['select-window', '-t', windowTarget]);
+              await run('tmux', ['select-window', '-t', windowID]);
             }
           }).catch((error) => {
             if (!disposed) ctx.ui.toast.show({ title: 'Tmux tabs', message: String(error), variant: 'error' });
