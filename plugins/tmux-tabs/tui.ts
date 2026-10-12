@@ -105,6 +105,11 @@ export default Plugin.define({
             if (!valid()) return;
             const session = await ctx.client.session.get({ sessionID: tab.sessionID });
             if (!valid()) return;
+            // Subagent sessions stay in this window; explicit forks still get a window.
+            if (!enabled && session.parentID && !session.fork) {
+              returnRoute = { type: 'session', sessionID: session.id };
+              return;
+            }
             const { stdout: target } = await run('tmux', ['display-message', '-p', '-t', pane, '#{session_id}']);
             if (!valid()) return;
             // Tab state is shared across clients. -S atomically reuses the named

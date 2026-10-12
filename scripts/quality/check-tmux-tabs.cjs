@@ -68,7 +68,10 @@ test('tmux tab handoff preserves sessions, focus, startup tabs and failure recov
       lookups.push(sessionID);
       if (gates.has(sessionID)) await gates.get(sessionID);
       if (sessionID === 'failure') throw new Error('Session lookup failed');
-      return { id: sessionID, location: { directory } };
+      return { id: sessionID, location: { directory },
+        ...(sessionID === 'subagent' ? { parentID: 'startup' } : {}),
+        ...(sessionID === 'hidden-fork' ? { parentID: 'subagent', fork: { sessionID: 'subagent' } } : {}),
+      };
     } } },
     data: { session: { root: id => id } },
     ui: {
@@ -146,22 +149,27 @@ test('tmux tab handoff preserves sessions, focus, startup tabs and failure recov
     setTabs([]);
     setRoute({ type: 'session', sessionID: 'startup' });
   });
-  setRoute({ type: 'session', sessionID: 'hidden-fork' });
-  await waitFor(async () => (await windows()).length === 7 && route().sessionID === 'startup');
+  setRoute({ type: 'session', sessionID: 'subagent' });
+  // /new queues behind navigation, so its completion also settles the handoff.
+  await newSession();
   assert.equal((await windows()).length, 7);
+  assert.equal(route().sessionID, 'subagent');
+  setRoute({ type: 'session', sessionID: 'hidden-fork' });
+  await waitFor(async () => (await windows()).length === 8 && route().sessionID === 'subagent');
+  assert.equal((await windows()).length, 8);
   assert.deepEqual(tabs(), []);
   assert.ok(!closed.includes('hidden-fork'));
   // Returning to the original session must not trigger a second handoff.
   await new Promise(resolve => setTimeout(resolve, 30));
-  assert.equal((await windows()).length, 7);
-  await newSession();
   assert.equal((await windows()).length, 8);
-  assert.equal(route().sessionID, 'startup');
+  await newSession();
+  assert.equal((await windows()).length, 9);
+  assert.equal(route().sessionID, 'subagent');
   const { stdout: fresh } = await tmux('display-message', '-p', '-t', 'test', '#{pane_start_command}');
   assert.ok(!fresh.includes('--session'), 'new window must start fresh rather than resume the parent');
   setRoute({ type: 'home' });
   await newSession();
-  assert.equal((await windows()).length, 9);
+  assert.equal((await windows()).length, 10);
   assert.equal(route().type, 'home');
   solid.batch(() => {
     setTabsEnabled(true);
@@ -172,7 +180,7 @@ test('tmux tab handoff preserves sessions, focus, startup tabs and failure recov
   open('failure');
   await waitFor(() => errors.length === 1);
   assert.ok(tabs().some(tab => tab.sessionID === 'failure'));
-  assert.equal((await windows()).length, 9);
+  assert.equal((await windows()).length, 10);
   await tmux('kill-server');
   open('tmux-failure');
   await waitFor(() => errors.length === 2);
