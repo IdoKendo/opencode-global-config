@@ -1,9 +1,6 @@
 import { Plugin } from '@opencode/plugin/tui';
 import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import { createEffect, createRoot } from 'solid-js';
-
-const run = promisify(execFile);
 
 export default Plugin.define({
   id: 'workmux-status',
@@ -29,7 +26,12 @@ export default Plugin.define({
 
         pending = pending.then(async () => {
           if (controller.signal.aborted || lastWindowStatus === status) return;
-          await run('workmux', ['set-window-status', status], { signal: controller.signal });
+          await new Promise<void>((resolve, reject) => {
+            const child = execFile('workmux', ['set-window-status', status],
+              { signal: controller.signal }, (error) => error ? reject(error) : resolve());
+            // Workmux waits for hook input until EOF, even when there is no payload.
+            child.stdin?.end();
+          });
           lastWindowStatus = status;
         }).catch((error) => {
           if (!controller.signal.aborted) console.error('Workmux status plugin:', error);

@@ -13,6 +13,7 @@ async function fixture(name, initialStatuses = {}) {
   const commands = [];
   const errors = [];
   const fetched = [];
+  const executions = [];
   const [tabs, setTabs] = solid.createSignal([]);
   const [route, setRoute] = solid.createSignal({ type: 'session', sessionID: 'main' });
   const [statuses, setStatuses] = solid.createSignal(initialStatuses);
@@ -33,6 +34,18 @@ async function fixture(name, initialStatuses = {}) {
       if (name === 'solid-js') return solid;
       if (name === 'node:child_process') return {
         execFile(command, args, options, callback) {
+          if (command === 'workmux') {
+            // Workmux reads hook input until EOF before publishing pane status.
+            let complete;
+            executions.push(new Promise(resolve => { complete = resolve; }));
+            return require('node:child_process').execFile(process.execPath, ['-e',
+              "process.stdin.resume(); process.stdin.on('end', () => process.exit(0));",
+            ], { ...options, timeout: 1500 }, (error, stdout, stderr) => {
+              if (!error) commands.push([command, ...args]);
+              callback(error, stdout, stderr);
+              complete();
+            });
+          }
           commands.push([command, ...args]);
           callback(null, '', '');
         },
@@ -64,6 +77,8 @@ async function fixture(name, initialStatuses = {}) {
   });
   if (name === 'notification') assert.equal(typeof listener, 'function', 'must subscribe through CLI data.listen');
   async function settle() {
+    await new Promise(resolve => setImmediate(resolve));
+    for (let i = 0; i < executions.length; i++) await executions[i];
     await new Promise(resolve => setImmediate(resolve));
     assert.deepEqual(errors, [], 'handlers must not fail silently');
   }
