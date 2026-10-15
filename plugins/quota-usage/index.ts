@@ -35,7 +35,11 @@ export default Plugin.define({
                         ])
                         const entries = extractQuotaEntries(payload)
                         const resetEntry = extractResetCreditEntry(resetCredits)
-                        if (resetEntry) entries.push(resetEntry)
+                        if (resetEntry) {
+                            const extraUsageIndex = entries.findIndex((entry) => entry.id === "extra-usage")
+                            if (extraUsageIndex < 0) entries.push(resetEntry)
+                            else entries.splice(extraUsageIndex, 0, resetEntry)
+                        }
                         if (entries.length === 0) return call.error("unavailable", "Quota payload did not include rate limits", {})
                         return { connected: true, entries }
                     }
@@ -69,6 +73,11 @@ function extractQuotaEntries(payload: unknown): QuotaEntry[] {
         if (primary) entries.push(primary)
         if (secondary) entries.push(secondary)
     }
+    const spendControl = isObject(payload.spend_control) ? payload.spend_control : null
+    const extraUsage = spendControl && isObject(spendControl.individual_limit)
+        ? parseExtraUsage(spendControl.individual_limit)
+        : null
+    if (extraUsage) entries.push(extraUsage)
     const credits = isObject(payload.credits) ? payload.credits : null
     if (credits) {
         if (credits.unlimited === true) entries.push({ id: "credits", name: "Credits", remaining: 0, unit: "credits", info: "unlimited" })
@@ -78,6 +87,21 @@ function extractQuotaEntries(payload: unknown): QuotaEntry[] {
         }
     }
     return entries
+}
+
+function parseExtraUsage(limit: Record<string, unknown>): QuotaEntry | null {
+    const used = toNumber(limit.used)
+    const maximum = toNumber(limit.limit)
+    if (used === null || maximum === null || maximum <= 0) return null
+    const usedPercent = toNumber(limit.used_percent) ?? used / maximum * 100
+    const boundedUsedPercent = Math.max(0, Math.min(100, usedPercent))
+    return {
+        id: "extra-usage",
+        name: "Extra usage",
+        remaining: Number(used.toFixed(2)),
+        unit: ` / ${Number(maximum.toFixed(2))} credits`,
+        progress: 100 - boundedUsedPercent,
+    }
 }
 
 function parseRateLimitWindow(id: string, name: string, snapshot: Record<string, unknown>): QuotaEntry | null {
