@@ -1,0 +1,12 @@
+{
+  "name": "local-redeem-reset",
+  "type": "module",
+  "exports": {
+    ".": "./index.ts",
+    "./rpc": "./rpc.ts",
+    "./tui": "./tui.tsx"
+  },
+  "dependencies": {
+    "@opencode/plugin": "^2.0.19"
+  }
+}
