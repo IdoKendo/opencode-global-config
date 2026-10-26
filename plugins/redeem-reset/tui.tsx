@@ -1,9 +1,17 @@
 import { Plugin } from "@opencode/plugin/tui"
-import { RedeemResetRpc } from "./rpc"
+import { RedeemResetRpc } from "./rpc.js"
 
 export default Plugin.define({
   id: "local.redeem-reset.tui",
-  setup(context) {
+  async setup(context) {
+    const { data: integrations } = await context.client.integration.list({
+      location: context.location ?? context.data.location.default(),
+    })
+    if (!integrations.some((integration) =>
+      ["openai", "codex"].includes(integration.id) &&
+      integration.connections.some((connection) => connection.type === "credential" && connection.method === "oauth")
+    )) return
+
     context.keymap.layer(() => ({
       mode: "global",
       commands: [

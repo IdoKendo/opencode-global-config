@@ -1,5 +1,5 @@
 import { Plugin } from "@opencode/plugin"
-import { RedeemResetRpc } from "./rpc"
+import { RedeemResetRpc } from "./rpc.js"
 
 const BASE_URL = "https://chatgpt.com/backend-api/wham/rate-limit-reset-credits"
 const ACCOUNT_CLAIM = "https://api.openai.com/auth"
@@ -14,6 +14,12 @@ type ResetCredit = {
 export default Plugin.define({
   id: "local.redeem-reset.server",
   async setup(ctx) {
+    const { data: integrations } = await ctx.integration.list()
+    if (!integrations.some((integration) =>
+      ["openai", "codex"].includes(integration.id) &&
+      integration.connections.some((connection) => connection.type === "credential" && connection.method === "oauth")
+    )) return
+
     await ctx.rpc.register(RedeemResetRpc, {
       preview: async (_input, rpc) => {
         try {
@@ -26,7 +32,8 @@ export default Plugin.define({
           return rpc.error("failed", message, { message })
         }
       },
-      redeem: async ({ creditId }, rpc) => {
+      redeem: async (input, rpc) => {
+        const { creditId } = input as { creditId: string }
         try {
           const { headers, credits } = await getResetCredits(ctx)
           const selected = listAvailableCredits(credits).find((credit) => credit.id === creditId)
@@ -73,8 +80,11 @@ function decodeJwtClaims(token: string): Record<string, unknown> | undefined {
 }
 
 async function getResetCredits(ctx: Parameters<Parameters<typeof Plugin.define>[0]["setup"]>[0]) {
-  const connection = await ctx.integration.connection.active("openai")
-  if (!connection) throw new Error("Connect OpenAI with ChatGPT OAuth first.")
+  const connections = await Promise.all(
+    ["openai", "codex"].map((id) => ctx.integration.connection.active(id)),
+  )
+  const connection = connections.find((connection) => connection?.type === "credential" && connection.method === "oauth")
+  if (!connection) throw new Error("Connect OpenAI or Codex with ChatGPT OAuth first.")
 
   const credential = await ctx.integration.connection.resolve(connection)
   if (credential?.type !== "oauth") throw new Error("ChatGPT OAuth is required to list reset credits.")

@@ -13,7 +13,15 @@ type UsageState =
 
 export default Plugin.define({
     id: "local.quota-usage",
-    setup(api) {
+    async setup(api) {
+        const { data: integrations } = await api.client.integration.list({
+            location: api.location ?? api.data.location.default(),
+        })
+        if (!integrations.some((integration) =>
+            ["openai", "codex"].includes(integration.id) &&
+            integration.connections.some((connection) => connection.type === "credential" && connection.method === "oauth")
+        )) return
+
         const quota = api.client.rpc(QuotaUsageRpc)
         const [state, setState] = createSignal<UsageState>({ status: "loading" })
         const [visible, setVisible] = createSignal(true)

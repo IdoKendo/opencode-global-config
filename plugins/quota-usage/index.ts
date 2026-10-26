@@ -6,6 +6,12 @@ const DEFAULT_BASE_URL = "https://chatgpt.com/backend-api"
 export default Plugin.define({
     id: "local.quota-usage-server",
     async setup(ctx) {
+        const { data: integrations } = await ctx.integration.list()
+        if (!integrations.some((integration) =>
+            ["openai", "codex"].includes(integration.id) &&
+            integration.connections.some((connection) => connection.type === "credential" && connection.method === "oauth")
+        )) return
+
         await ctx.rpc.register(QuotaUsageRpc, {
             async read(_input, call) {
                 try {
