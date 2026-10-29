@@ -6,6 +6,7 @@
   "plugins": [
     "-opencode.sidebar.mcp",
     "./plugins/quota-usage/tui.tsx",
+    "./plugins/goal-sidebar/tui.tsx",
     "./plugins/skills-sidebar/tui.tsx",
     "./plugins/notification/tui.ts",
     "./plugins/workmux-status/tui.ts",
