@@ -28,3 +28,39 @@ jobs:
 
       - name: Run quality gates
         run: npm run quality
+
+  agent-controls:
+    name: Agent test controls
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "26"
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install --no-audit --no-fund
+          fi
+
+      - name: Run positive and negative controls
+        run: npm run test:agents:controls
+
+      - name: Validate all feature bindings
+        run: npm run test:agents -- --dry-run

@@ -4,10 +4,13 @@
     "type": "module",
     "version": "1.0.0",
     "devDependencies": {
+        "@cucumber/cucumber": "^13.3.0",
         "@types/node": "^24.4.0",
         "typescript": "^5.9.2"
     },
     "scripts": {
+        "test:agents:controls": "node --test tests/controls/*.test.mjs",
+        "test:agents": "cucumber-js 'tests/features/**/*.feature' --import 'tests/support/hooks.mjs' --import 'tests/steps/**/*.mjs' --format summary --format-options '{\"snippets\":false}'",
         "quality:config-parse": "node scripts/quality/check-config-parse.mjs",
         "quality:secret-scan": "node scripts/quality/check-secret-scan.mjs",
         "quality:agent-permissions": "node scripts/quality/check-agent-permissions.mjs",

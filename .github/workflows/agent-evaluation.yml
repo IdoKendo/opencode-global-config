@@ -1,0 +1,127 @@
+name: Agent Evaluation
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: OpenAI model reference (openai/...)
+        required: true
+        default: openai/gpt-6-astra
+        type: string
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agent-evaluation
+  cancel-in-progress: false
+
+jobs:
+  evaluate:
+    name: Agent evaluation without MCP (informational)
+    # Enable automatic runs after adding the model credential.
+    if: github.event_name == 'workflow_dispatch' || vars.AGENT_TEST_LIVE_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    defaults:
+      run:
+        shell: bash
+    env:
+      AGENT_TEST_MODEL: ${{ inputs.model || vars.AGENT_TEST_MODEL || 'openai/gpt-6-astra' }}
+      AGENT_TEST_TIMEOUT_MS: "180000"
+    steps:
+      - name: Checkout committed setup
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Check model credential
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo '::error::Add the OPENAI_API_KEY repository Actions secret before running live evaluation.'
+            exit 1
+          fi
+          case "$AGENT_TEST_MODEL" in
+            openai/*) ;;
+            *) echo '::error::This workflow supplies OpenAI credentials; select an openai/... model.'; exit 1 ;;
+          esac
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "26"
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Disable MCP servers in the CI checkout
+        run: |
+          node --input-type=module <<'JS'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const config = JSON.parse(readFileSync('opencode.json', 'utf8'));
+          for (const server of Object.values(config.mcp?.servers ?? {})) {
+            server.disabled = true;
+          }
+          writeFileSync('opencode.json', JSON.stringify(config, null, 4) + '\n');
+          console.log('CI profile: all configured MCP servers disabled.');
+          JS
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install --no-audit --no-fund
+          fi
+
+      - name: Install pinned OpenCode
+        run: |
+          npm install --prefix "$RUNNER_TEMP/opencode-cli" --no-audit --no-fund @opencode/cli@2.1.4
+          echo "$RUNNER_TEMP/opencode-cli/node_modules/.bin" >> "$GITHUB_PATH"
+
+      - name: Verify OpenCode version
+        run: |
+          version="$(opencode --version)"
+          echo "OpenCode $version"
+          version="${version#opencode v}"
+          test "$version" = "2.1.4"
+
+      - name: Evaluate all behavior families
+        id: evaluation
+        continue-on-error: true
+        env:
+          AGENT_TEST_TMPDIR: ${{ runner.temp }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: npm run test:agents -- --format json:logs/agent-tests/report.json
+
+      - name: Publish evaluation status
+        if: always()
+        env:
+          EVALUATION_OUTCOME: ${{ steps.evaluation.outcome }}
+        run: |
+          {
+            echo '## Agent evaluation (MCP disabled)'
+            echo "Model: \`$AGENT_TEST_MODEL\`"
+            echo 'Profile: repository skills, agents, and instructions; configured MCP servers disabled.'
+            echo "Evaluation step: **${EVALUATION_OUTCOME:-not run}**"
+            echo 'Behavioral failures are informational. See the report and per-scenario traces.'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$EVALUATION_OUTCOME" = failure ]; then
+            echo '::warning::Agent evaluation failed; inspect the uploaded evidence.'
+          fi
+
+      - name: Upload evaluation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-evaluation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: logs/agent-tests/
+          if-no-files-found: warn
+          retention-days: 7
