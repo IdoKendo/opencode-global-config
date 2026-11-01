@@ -1,6 +1,7 @@
 # Agent integration tests
 
-This root suite runs the full repository setup on nine documentation tasks in isolated workspaces.
+This root suite runs the full repository setup on 18 tasks across five behavior families
+in isolated workspaces.
 It evaluates generated files, final handoffs, tool traces, and actual fixture-command execution.
 
 ## Prerequisites
@@ -32,7 +33,7 @@ Check Gherkin parsing and step binding without running the scenarios:
 npm run test:agents -- --dry-run
 ```
 
-Run all nine scenarios against an explicit model:
+Run all scenarios against an explicit model:
 
 ```sh
 AGENT_TEST_MODEL=openai/gpt-6-astra npm run test:agents
@@ -43,6 +44,12 @@ Select the documentation behavior family, or just its wrapping scenario:
 ```sh
 AGENT_TEST_MODEL=openai/gpt-6-astra npm run test:agents -- --tags @write_docs
 AGENT_TEST_MODEL=openai/gpt-6-astra npm run test:agents -- --name 'Wrap prose'
+```
+
+Select the test-audit family:
+
+```sh
+AGENT_TEST_MODEL=openai/gpt-6-astra npm run test:agents -- --tags @test_audit
 ```
 
 Include a machine-readable Cucumber report:
@@ -60,16 +67,16 @@ steps after a scenario failure, so inspect both the failing assertion and saved 
 
 ```text
 tests/
-  features/write-docs/       # Gherkin workflows tagged @write_docs
-  fixtures/write-docs/       # Input documents and executable fixtures
-  steps/write-docs.mjs       # Documentation step definitions and assertions
+  features/<family>/         # Tagged Gherkin workflows
+  fixtures/<family>/         # Task inputs and executable fixtures
+  steps/<family>.mjs         # Family step definitions and assertions
   steps/setup.mjs            # Shared setup assertions
   support/
     harness.mjs             # Full-setup linking, agent execution, and evidence
     hooks.mjs               # Scenario lifecycle and cleanup
     scenarios.mjs           # Scenario names mapped to inputs and prompts
   controls/
-    write-docs.test.mjs      # Positive and negative assertion controls
+    <family>.test.mjs        # Positive and negative assertion controls
     harness.test.mjs         # Harness controls without live models
 ```
 
@@ -97,9 +104,9 @@ Each scenario saves a unique artifact directory containing:
   and `opencodeVersion`.
 - `trace.jsonl` and `stderr.txt`: raw agent output and diagnostics, including runtime tool use and
   selected skills in the trace.
-- `executions.jsonl`: worker invocation arguments and exit codes recorded during the agent run.
+- `executions.jsonl`: fixture execution receipts recorded during the agent run, when supported.
 - `result.json`: Cucumber result, including assertion failures.
-- `workspace/`: generated documents and fixture files, excluding `.git`.
+- `workspace/`: resulting task files, excluding `.git`.
 - `diff.patch`: tracked changes against the temporary baseline; new files are in `workspace/`.
 
 There is no `SKILL.md` snapshot or skill hash. Metadata identifies the live repository, not a frozen
@@ -115,8 +122,8 @@ agent and cannot create execution receipts that satisfy agent-verification asser
 
 The temporary `XDG_CONFIG_HOME/opencode` symlinks to the actual repository root. The unmodified
 global setup remains available: `AGENTS.md`, all automatically discovered and configured skills,
-agents, plugins, permissions, and MCP settings. The agent selects skills normally; write-docs is
-not injected. External paths and credentials must work as they do for the actual configuration.
+agents, plugins, permissions, and MCP settings. The agent selects skills normally; task prompts do
+not inject them. External paths and credentials must work as they do for the actual configuration.
 See `tests/support/harness.mjs:13` for setup linking.
 
 Each invocation uses a standalone OpenCode process, the explicit test model, and `--auto`.
@@ -126,16 +133,38 @@ than inherited as another configuration layer. Feature expectations are not copi
 See `tests/support/harness.mjs:108` and `tests/support/harness.mjs:172`.
 
 The final handoff is extracted after the last tool interaction. Intermediate plans cannot satisfy
-handoff assertions. Worker receipts prove actual invocation even when an agent verifies commands
-through a subprocess loop that prints only `PASS`. Non-document fixture bytes and permissions must
-remain unchanged, preventing implementation edits from changing the verification oracle.
+handoff assertions. Fixture receipts prove actual invocation even when an agent verifies commands
+through a subprocess loop that prints only `PASS`.
+
+By default, non-document fixture bytes and permissions must remain unchanged.
+Code-editing families exempt their task files from this check before agent execution.
+For test-audit, these files are `shipping.py` and files under the fixture's `tests/` directory.
+The checkout caller and test runner remain protected. See `tests/steps/test-audit.mjs:21`.
 
 ## Coverage and limitations
 
-The scenarios cover line wrapping, protected constructs, concise prose, facts and caveats, project
-conventions, related-document updates, unrelated drift, successful and blocked verification, and
-final Git state. The offline controls exercise both valid outputs and deliberate violations, plus
-process timeout, stdin EOF, trace completeness, runtime receipts, and implementation integrity.
+The suite has these behavior families:
+
+| Family | Tag | Scenarios | Main contracts |
+| --- | --- | --- | --- |
+| write-docs | `@write_docs` | 9 | Accurate, readable documentation and verified examples |
+| atomic-code-changes | `@atomic_code_changes` | 2 | Bounded fixes and verification between concerns |
+| shape-output | `@shape_output` | 3 | Ordered guidance, diagnosis reset, and direct factual answers |
+| simplify-code | `@simplify_code` | 2 | Preserve boundary results and callback effects during cleanup |
+| test-audit | `@test_audit` | 2 | Remove redundant tests safely and add missing boundary coverage |
+
+The documentation scenarios cover line wrapping, protected constructs, concise prose, facts and
+caveats, project conventions, related-document updates, unrelated drift, successful and blocked
+verification, and final Git state. The offline controls exercise valid outputs and deliberate
+violations, plus process timeout, stdin EOF, trace completeness, runtime receipts,
+and implementation integrity.
+
+The test-audit checks run the resulting suites and apply deliberate shipping mutations.
+They reject surviving mutations, import-error false positives, failing baselines,
+and stale receipts.
+These two scenarios do not cover campaign mode, static-contract retention,
+or baseline-defect handling.
+See [the test-audit fixture guide](fixtures/test-audit/README.md) for the contracts and controls.
 
 Semantic checks are bounded heuristics for these fixtures, not general language understanding.
 The STE scenario checks selected vocabulary, passive constructions, and the 20-word procedure limit.
@@ -146,7 +175,7 @@ Clarity, usefulness, and tone still need human review. The Markdown checks cover
 not the entire Markdown grammar. Git checks establish final HEAD and index state, not the absence
 of every transient staging operation. Runtime receipts are not adversarial tamper-proof evidence.
 
-The current nine workflows exercise the full setup, not every skill, agent, plugin, or MCP
+These workflows exercise the full setup, not every skill, agent, plugin, or MCP
 integration. Runtime traces help explain tool and skill selection. CLI runs do not cover the
 interactive TUI. Fixture workspaces isolate task files, not configuration capabilities or OS access.
 The repository is linked live, with no configuration snapshot; edits during a run can affect it.
