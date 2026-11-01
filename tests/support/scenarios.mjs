@@ -10,6 +10,20 @@ export const scenarios = {
       + 'price times quantity for populated carts; shipping(subtotal) should be free starting '
       + 'at 5000 cents and cost 500 cents below that. Leave changes unstaged and uncommitted.',
   },
+  'Give ordered guidance for a local archive rehearsal': {
+    fixture: 'shape-output/rehearsal',
+    prompt: 'Read rehearsal.txt. How should I carry out this local archive rehearsal? '
+      + 'I will perform it myself; do not execute commands or change files.',
+  },
+  'Reset diagnosis after three unsuccessful fixes': {
+    fixture: 'shape-output/debug-spiral',
+    prompt: 'Read conversation.txt for our troubleshooting history. It is still broken. '
+      + 'What should we do next? Do not change files or access external systems.',
+  },
+  'Answer a retention fact without manufacturing work': {
+    fixture: 'shape-output/factual',
+    prompt: 'According to policy.txt, how many days are rehearsal archives retained?',
+  },
   'Edit a procedure with STE vocabulary and short instructions': {
     fixture: 'write-docs/formatting/ste',
     prompt: 'Improve the procedure in document.md. Preserve its technical details.',

@@ -1,0 +1,12 @@
+Troubleshooting history for a local upload simulator
+
+Initial assumption: the upload fails because of a transient network error.
+Assistant: Increase the retry count from 2 to 4.
+User: Still broken. The upload fails with the same error.
+Assistant: Increase the retry delay from 1 second to 3 seconds.
+User: Still broken. The upload fails with the same error.
+Assistant: Increase the retry count from 4 to 8.
+User: Still broken. The upload fails with the same error.
+
+The exact error text and status code have not been collected.
+No actual network service is connected to this fixture.

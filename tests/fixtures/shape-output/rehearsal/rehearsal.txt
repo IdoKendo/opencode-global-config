@@ -1,0 +1,8 @@
+Local archive rehearsal
+
+The source directory is sample/.
+Create rehearsal.tar from sample/ with tar -cf rehearsal.tar sample/.
+Inspect its member list with tar -tf rehearsal.tar before moving it.
+Finally move rehearsal.tar into the existing reviewed/ directory.
+This is a rehearsal on local disposable files. No network or deployment is involved.
+No measurements of how long this process takes are available.

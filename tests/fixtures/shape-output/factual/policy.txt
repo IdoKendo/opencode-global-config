@@ -1,0 +1,5 @@
+Rehearsal archive policy
+
+Rehearsal archives are retained for 14 days.
+Production archives are retained for 90 days.
+Retention is automatic; no manual cleanup is required.
