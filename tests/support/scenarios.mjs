@@ -1,4 +1,8 @@
 export const scenarios = {
+  'Edit a procedure with STE vocabulary and short instructions': {
+    fixture: 'write-docs/formatting/ste',
+    prompt: 'Improve the procedure in document.md. Preserve its technical details.',
+  },
   'Document behavior and an edge case using project conventions': {
     fixture: 'write-docs/documentation/conventions',
     includes: ['write-docs/documentation/common'],

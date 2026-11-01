@@ -16,6 +16,7 @@ ordinary project documentation. Expected outcomes remain in `tests/features/writ
 | Wrap prose without shortening it or changing list structure | `formatting/wrapping` |
 | Preserve constructs that wrapping would break | `formatting/protected-constructs` |
 | Remove filler while preserving technical facts and caveats | `formatting/concise` |
+| Edit a procedure with STE vocabulary and short instructions | `formatting/ste` |
 
 ## Workspace setup contract
 

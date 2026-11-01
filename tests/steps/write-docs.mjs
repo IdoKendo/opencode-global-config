@@ -10,6 +10,49 @@ const original = (world, file) => world.fixture(file);
 const document = (world) => world.read('document.md');
 const output = (value) => typeof value === 'string' ? value : JSON.stringify(value ?? '');
 
+// Fixture-scoped checks, not a complete STE grammar or dictionary validator.
+function procedureText(text) {
+  for (const block of fences(text)) text = text.replace(block.text, '');
+  return normalize(text.replace(/^#{1,6}\s+.*$/gm, '')
+    .replace(/^\s*(?:[-+*]|\d+[.)])\s+/gm, '')
+    .replace(/`[^`]+`/g, 'LABEL'));
+}
+
+Given('a procedure with complex vocabulary and a long passive instruction', async function () {
+  const text = procedureText(await original(this, 'document.md'));
+  assert.match(text, /commenced.*utilize/);
+  assert.ok(text.split(/\s+/).length > 20);
+});
+
+Then('the procedure omits unapproved general verbs and passive instructions', async function () {
+  const text = procedureText(await document(this));
+  assert.ok(text.length > 0, 'Missing procedure prose');
+  assert.doesNotMatch(text, /\b(?:commenc\w*|utiliz\w*)\b/i, 'Unapproved general verb');
+  assert.doesNotMatch(text, /\b(?:is|are|be|been)\s+(?:\w+\s+)?(?:started|checked|allowed|used|pressed)\b/i,
+    'Passive instruction');
+});
+
+Then('each procedure sentence has at most 20 words', async function () {
+  const sentences = procedureText(await document(this)).split(/[.!?]+/).map(normalize).filter(Boolean);
+  assert.ok(sentences.length > 0, 'Missing procedure sentences');
+  // This fixture has no abbreviations, units, or multiword technical names needing special counts.
+  for (const sentence of sentences) {
+    const count = sentence.split(/\s+/).length;
+    assert.ok(count <= 20, `Procedure sentence has ${count} words: ${sentence}`);
+  }
+});
+
+Then('the procedure retains the backup, button label, and wait time', async function () {
+  const text = plain(await document(this));
+  assert.match(text, /\b(?:start|begin)\b[^.!?]{0,80}\bbackup\b|\bbackup\b[^.!?]{0,80}\b(?:start|begin)\b/i);
+  assert.match(text, /\bblue\b[^.!?]{0,80}\bbutton\b/i);
+  contains(await document(this), '`Commence`');
+  assert.match(text, /\b(?:wait|allow)\b[^.!?]{0,40}\b30 seconds\b/i);
+  assert.match(text, /\b(?:check|read)\b[^.!?]{0,40}\bstatus\b/i);
+  assert.ok(text.search(/30 seconds/i) < text.search(/\b(?:check|read)\b[^.!?]{0,40}\bstatus\b/i),
+    'Check status only after the wait');
+});
+
 function fences(text) {
   const result = [];
   let current;

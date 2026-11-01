@@ -1,6 +1,6 @@
 # Agent integration tests
 
-This root suite runs the full repository setup on eight documentation tasks in isolated workspaces.
+This root suite runs the full repository setup on nine documentation tasks in isolated workspaces.
 It evaluates generated files, final handoffs, tool traces, and actual fixture-command execution.
 
 ## Prerequisites
@@ -32,7 +32,7 @@ Check Gherkin parsing and step binding without running the scenarios:
 npm run test:agents -- --dry-run
 ```
 
-Run all eight scenarios against an explicit model:
+Run all nine scenarios against an explicit model:
 
 ```sh
 AGENT_TEST_MODEL=openai/gpt-6-astra npm run test:agents
@@ -138,11 +138,15 @@ final Git state. The offline controls exercise both valid outputs and deliberate
 process timeout, stdin EOF, trace completeness, runtime receipts, and implementation integrity.
 
 Semantic checks are bounded heuristics for these fixtures, not general language understanding.
+The STE scenario checks selected vocabulary, passive constructions, and the 20-word procedure limit.
+It also checks that the button label and technical facts survive the edit. Its prompt does not name
+STE. These checks do not certify full ASD-STE100 compliance or check the complete dictionary.
+The sentence counter is limited to this fixture; it does not implement all Section 8 counting rules.
 Clarity, usefulness, and tone still need human review. The Markdown checks cover these fixtures,
 not the entire Markdown grammar. Git checks establish final HEAD and index state, not the absence
 of every transient staging operation. Runtime receipts are not adversarial tamper-proof evidence.
 
-The current eight workflows exercise the full setup, not every skill, agent, plugin, or MCP
+The current nine workflows exercise the full setup, not every skill, agent, plugin, or MCP
 integration. Runtime traces help explain tool and skill selection. CLI runs do not cover the
 interactive TUI. Fixture workspaces isolate task files, not configuration capabilities or OS access.
 The repository is linked live, with no configuration snapshot; edits during a run can affect it.

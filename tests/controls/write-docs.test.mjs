@@ -62,6 +62,31 @@ async function control(step, good, bad, expected) {
   });
 }
 
+test('STE checks distinguish prose from labels and reject specific rule violations', async () => {
+  const good = 'Start the backup with the blue `Commence` button. Wait 30 seconds. Check the status.';
+  const input = (text) => ({ docs: { 'document.md': text } });
+  const style = 'the procedure omits unapproved general verbs and passive instructions';
+  for (const [bad, expected] of [
+    [good.replace('Start', 'Commence'), /Unapproved general verb/],
+    [good.replace('Start the backup with', 'Utilize'), /Unapproved general verb/],
+    [good.replace('Check the status.', 'The status must be checked.'), /Passive instruction/],
+    ['', /Missing procedure prose/],
+  ]) await control(style, input(good), input(bad), expected);
+  const length = 'each procedure sentence has at most 20 words';
+  const boundary = 'Use the blue button on the main control panel to start the backup before you check the status shown here.';
+  await control(length, input(boundary), input(boundary.replace('shown here.', 'shown below here.')),
+    /Procedure sentence has 21 words/);
+  const facts = 'the procedure retains the backup, button label, and wait time';
+  for (const [before, after] of [['backup', 'report'], ['blue', 'red'], ['`Commence`', '`Start`'],
+    ['30 seconds', '60 seconds'], ['Check the status', 'Check the log']]) {
+    await control(facts, input(good), input(good.replace(before, after)),
+      before === '`Commence`' ? /Missing/ : 'match');
+  }
+  await control(facts, input(good), input(
+    'Start the backup with the blue `Commence` button. Check the status. Wait 30 seconds.'),
+  /Check status only after the wait/);
+});
+
 test('prose limit is inclusive and counts indentation', async () => {
   const step = 'every ordinary prose source line is at most 100 characters';
   for (const prefix of ['', '  - ']) {

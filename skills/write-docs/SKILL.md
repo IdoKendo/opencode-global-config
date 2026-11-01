@@ -21,12 +21,17 @@ Make complex systems feel obvious to the next reader.
 - Use concrete examples from the codebase, including edge cases when they matter.
 
 ## Writing style
+- Always use ASD-STE100 Simplified Technical English (STE) for English prose you write or rewrite.
+  Read [the STE reference](references/asd-ste100.md) before drafting or editing prose.
+  Apply its vocabulary and writing rules. Use the official standard for dictionary checks.
+- Keep project structure and heading conventions. Use STE when the existing prose style conflicts.
+  For formatting-only tasks, preserve the text; do not rewrite it to apply STE.
 - Prefer plain words and active voice. Cut filler, stock phrases, and unsupported praise; keep
   technical terms when they are more precise.
 - Before delivering, review the prose you changed for clarity and brevity. Style edits must preserve
   facts, names, numbers, and caveats; correct factual errors only when supported by evidence.
-- Apply these style rules to prose, not code or identifiers. Precision and the project's conventions
-  take priority.
+- Apply these style rules to prose, not code, identifiers, literal UI labels, or quoted output.
+  Preserve technical meaning. Use the STE rules for technical names instead of changing identifiers.
 
 ## Verification
 - Measure Markdown source line lengths with a command or script before delivering. Count indentation
