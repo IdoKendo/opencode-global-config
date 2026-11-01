@@ -34,6 +34,17 @@ export const scenarios = {
     simplifyCase: 'delivery',
     prompt: 'Clean up the current working-tree changes in workflow.py.',
   },
+  'Prune redundant shipping tests without losing checkout protection': {
+    fixture: 'test-audit/prune',
+    includes: ['test-audit/common'],
+    prompt: 'Audit and simplify the shipping test suite and related unused code. Implement the cleanup. '
+      + 'Keep the checkout behavior intact.',
+  },
+  'Add the missing free delivery boundary at checkout': {
+    fixture: 'test-audit/boundary',
+    includes: ['test-audit/common'],
+    prompt: 'Add regression coverage for checkout at the exact $50 free-delivery threshold.',
+  },
   'Edit a procedure with STE vocabulary and short instructions': {
     fixture: 'write-docs/formatting/ste',
     prompt: 'Improve the procedure in document.md. Preserve its technical details.',
