@@ -1,6 +1,6 @@
 # Agent integration tests
 
-This root suite runs the full repository setup on 18 tasks across five behavior families
+This root suite runs the full repository setup on 20 tasks across six behavior families
 in isolated workspaces.
 It evaluates generated files, final handoffs, tool traces, and actual fixture-command execution.
 
@@ -152,6 +152,7 @@ The suite has these behavior families:
 | shape-output | `@shape_output` | 3 | Ordered guidance, diagnosis reset, and direct factual answers |
 | simplify-code | `@simplify_code` | 2 | Preserve boundary results and callback effects during cleanup |
 | test-audit | `@test_audit` | 2 | Remove redundant tests safely and add missing boundary coverage |
+| build-the-tool | `@build_the_tool` | 2 | Safe migration reruns and complete release evidence |
 
 The documentation scenarios cover line wrapping, protected constructs, concise prose, facts and
 caveats, project conventions, related-document updates, unrelated drift, successful and blocked
@@ -165,6 +166,17 @@ and stale receipts.
 These two scenarios do not cover campaign mode, static-contract retention,
 or baseline-defect handling.
 See [the test-audit fixture guide](fixtures/test-audit/README.md) for the contracts and controls.
+
+The build-the-tool checks execute generated tools on new inputs with independent expected results.
+They check milliseconds, unchanged nested values, byte-stable reruns, and read-only release checks.
+Release checks must reject failed, missing, empty, duplicate, malformed, and unreadable evidence.
+The scenarios require normal skill selection, final-tool execution receipts, and an unchanged HEAD.
+They require an empty Git index. Fixture contracts specify tool entry points and a project runner.
+They do not test tool discovery.
+They do not check the first manual migration unit, existing-tool reuse, small-task restraint,
+or delegation. The checks do not establish production health or authorize deployment.
+See `tests/steps/build-the-tool.mjs:1` for the assertions and
+`tests/controls/build-the-tool.test.mjs:1` for executable positive and negative controls.
 
 Semantic checks are bounded heuristics for these fixtures, not general language understanding.
 The STE scenario checks selected vocabulary, passive constructions, and the 20-word procedure limit.
@@ -215,11 +227,12 @@ installed under the runner's temporary directory. Metadata reports a dirty setup
 intentional MCP override, and the job summary identifies the MCP-disabled profile.
 
 Live jobs have a 35-minute limit and retain the per-scenario 180-second agent timeout. Runs are
-serialized. The evaluation step is informational: behavioral failures appear in the job summary and
-as a warning, while dependency/setup failures fail the job. Evidence uploads run even after failure,
-with seven-day retention. A run that fails before producing evidence may have no artifact.
+serialized. Evaluation failures fail the step and workflow, as do dependency and setup failures.
+The summary and evidence upload steps run after failures and retain artifacts for seven days
+(`.github/workflows/agent-evaluation.yml:96`). A run that fails before it produces evidence can have
+no artifact.
 
 Download the `agent-evaluation-<run>-<attempt>` artifact for `report.json`, generated documents,
 runtime receipts, and traces. Review these before attributing a failure to the setup, model,
-fixture, or checker. Do not treat an informational workflow's green status as proof that every
-scenario passed.
+fixture, or checker. If a trace reports `credit_balance_exhausted`, add credits to the OpenAI API
+account for `OPENAI_API_KEY` before you run the evaluation again.

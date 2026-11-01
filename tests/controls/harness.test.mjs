@@ -3,7 +3,7 @@ import { chmod, cp, lstat, mkdir, mkdtemp, readFile, realpath, rm, symlink, writ
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { assertImplementationUnchanged, command, linkSetup, parseTrace } from '../support/harness.mjs';
+import { assertImplementationUnchanged, command, linkSetup, parseTrace, runAgent } from '../support/harness.mjs';
 
 async function temporary(t) {
   const root = await mkdtemp(path.join(process.env.AGENT_TEST_TMPDIR ?? tmpdir(), 'agent-test-control-'));
@@ -46,6 +46,22 @@ test('commands fail on timeout and preserve diagnostic output', async () => {
     assert.notEqual(error.result.code, 0);
     return true;
   });
+});
+
+test('agent failures expose stdout diagnostics and preserve evidence', async (t) => {
+  const root = await temporary(t);
+  const stdout = JSON.stringify({ type: 'error', error: {
+    type: 'provider.quota', message: 'credit_balance_exhausted: You have no credits remaining.',
+  } }) + '\n';
+  const executable = path.join(root, 'opencode');
+  await writeFile(executable, `#!/bin/sh\nprintf '%s\\n' '${stdout.trim()}'\nexit 1\n`);
+  await chmod(executable, 0o755);
+  await assert.rejects(runAgent({
+    root, workspace: root, artifact: root, env: { PATH: root },
+    model: 'openai/test', scenario: { prompt: 'Test failure reporting' }, timeout: 3_000,
+  }), /OpenCode exited 1: [\s\S]*credit_balance_exhausted/);
+  assert.equal(await readFile(path.join(root, 'trace.jsonl'), 'utf8'), stdout);
+  assert.equal(await readFile(path.join(root, 'stderr.txt'), 'utf8'), '');
 });
 
 test('trace parsing keeps only final response and rejects incomplete or errored traces', () => {

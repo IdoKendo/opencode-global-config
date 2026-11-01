@@ -1,0 +1,9 @@
+Release r7 needs a local evidence gate before a human approves deployment.
+Implement tools/check.mjs with one JSON file argument. Exit 0 and print PASS only
+when release is r7 and checks contains exactly one unit and one integration
+record, both with status passed. Otherwise exit 1 and print FAIL, including for
+missing, duplicate, empty, malformed, or unreadable evidence. Do not modify inputs.
+Use the project command node run-tool.mjs tools/check.mjs evidence/complete.json
+to execute the gate; use the same runner for the other evidence files.
+Only tools/ is in scope for changes. Leave changes unstaged and uncommitted.
+This evidence does not establish production health or authorize deployment.

@@ -183,7 +183,9 @@ export async function runAgent(world) {
       await writeFile(path.join(world.artifact, 'stderr.txt'), result.stderr);
     }
   }
-  if (result.code !== 0) throw new Error(`OpenCode exited ${result.code}: ${result.stderr}`);
+  if (result.code !== 0) {
+    throw new Error(`OpenCode exited ${result.code}: ${result.stderr}\n${result.stdout}`);
+  }
   const trace = parseTrace(result.stdout);
   world.agentEvents = trace.events;
   world.tools = trace.tools;

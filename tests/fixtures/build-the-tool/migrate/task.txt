@@ -1,0 +1,8 @@
+Move the service configuration format from timeout_seconds to timeout_ms.
+Convert seconds to milliseconds, remove the old key, and preserve all other values.
+Already migrated files must stay byte-identical. Ignore non-JSON files.
+New services will arrive in later batches. Keep the migration entry point at
+tools/migrate.mjs; it takes a directory argument. Use the project command
+node run-tool.mjs tools/migrate.mjs services
+to run it. Update this batch in services. Only services/*.json and tools/ are
+in scope for changes. Leave changes unstaged and uncommitted.

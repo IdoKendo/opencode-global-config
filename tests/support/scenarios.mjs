@@ -1,4 +1,16 @@
 export const scenarios = {
+  'Migrate service timeouts with a reusable safe tool': {
+    fixture: 'build-the-tool/migrate',
+    includes: ['build-the-tool/common'],
+    tool: 'migrate',
+    prompt: 'Read task.txt and migrate the service configuration batch.',
+  },
+  'Check release evidence without treating missing checks as success': {
+    fixture: 'build-the-tool/check',
+    includes: ['build-the-tool/common'],
+    tool: 'check',
+    prompt: 'Read task.txt and implement the local release evidence gate.',
+  },
   'Fix empty checkout totals without repairing adjacent shipping behavior': {
     fixture: 'atomic-code-changes/checkout',
     prompt: 'Fix total(items): an empty checkout cart should total 0 cents, and populated carts '
