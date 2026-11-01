@@ -24,6 +24,16 @@ export const scenarios = {
     fixture: 'shape-output/factual',
     prompt: 'According to policy.txt, how many days are rehearsal archives retained?',
   },
+  'Clean up pricing changes without changing boundary results': {
+    fixture: 'simplify-code/project',
+    simplifyCase: 'pricing',
+    prompt: 'Clean up the current working-tree changes in workflow.py.',
+  },
+  'Clean up delivery changes without changing callback effects': {
+    fixture: 'simplify-code/project',
+    simplifyCase: 'delivery',
+    prompt: 'Clean up the current working-tree changes in workflow.py.',
+  },
   'Edit a procedure with STE vocabulary and short instructions': {
     fixture: 'write-docs/formatting/ste',
     prompt: 'Improve the procedure in document.md. Preserve its technical details.',
