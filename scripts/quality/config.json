@@ -6,12 +6,6 @@
     { "file": "agents/bug-hunter.md", "pattern": "cat *" },
     { "file": "agents/bug-hunter.md", "pattern": "head *" },
     { "file": "agents/bug-hunter.md", "pattern": "tail *" },
-    { "file": "agents/bug-hunter.md", "pattern": "jk *" },
-    { "file": "agents/code-artisan.md", "pattern": "ls *" },
-    { "file": "agents/code-artisan.md", "pattern": "which *" },
-    { "file": "agents/code-artisan.md", "pattern": "rg *" },
-    { "file": "agents/code-artisan.md", "pattern": "cat *" },
-    { "file": "agents/code-artisan.md", "pattern": "head *" },
-    { "file": "agents/code-artisan.md", "pattern": "tail *" }
+    { "file": "agents/bug-hunter.md", "pattern": "jk *" }
   ]
 }
