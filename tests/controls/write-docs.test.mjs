@@ -201,6 +201,20 @@ test('default updates cover both guides without changing unrelated installer ins
     { handoff }, { handoff: handoff.replace('install-worker.sh', 'setup.sh') }, /Missing "install-worker.sh"/);
 });
 
+test('retry defaults accept either word order without accepting negation or a stale default', async () => {
+  const step = '"docs/retries.md" describes the default retry count as 5';
+  const input = (text) => ({ docs: { 'docs/retries.md': text } });
+  const good = 'The worker uses 5 retry attempts by default (see worker.py:21).';
+  for (const bad of [
+    'The worker does not use 5 retry attempts by default.',
+    'The worker uses 3 retry attempts by default.',
+    'Set 5 attempts manually. The worker uses 3 attempts by default.',
+    'The default is 5. The worker uses 3 retry attempts by default.',
+  ]) {
+    await control(step, input(good), input(bad), /default/i);
+  }
+});
+
 test('corrected examples and verification claims cannot substitute for runtime receipts', async () => {
   const good = {
     docs: { 'docs/usage.md': '```sh\npython worker.py --attempts 3\n```' },

@@ -117,8 +117,12 @@ async function guide(world) {
 }
 
 function defaultCount(text, count) {
-  assert.match(plain(text), new RegExp(`\\bdefaults?\\b(?:(?!\\b(?:not|never|no)\\b)[^.!?\\n]){0,100}\\b${count}\\b`, 'i'));
-  if (count === 5) assert.doesNotMatch(plain(text), /\bdefaults?\b[^.!?\n]{0,100}\b3\b/i);
+  const affirmative = plain(text).split(/[.!?]/)
+    .filter((sentence) => !/\b(?:not|never|no)\b|n't\b/i.test(sentence)).join('.');
+  const pattern = (value) => new RegExp(
+    `\\bdefaults?\\b[^.!?]{0,100}\\b${value}\\b|\\b${value}\\b[^.!?]{0,100}\\bby default\\b`, 'i');
+  assert.match(affirmative, pattern(count), `Missing affirmative default of ${count}`);
+  if (count === 5) assert.doesNotMatch(affirmative, pattern(3), 'Retained stale default of 3');
 }
 
 async function workerRun(world, command, expectedCode, expectedOutput) {
