@@ -1,4 +1,15 @@
 export const scenarios = {
+  'Fix empty checkout totals without repairing adjacent shipping behavior': {
+    fixture: 'atomic-code-changes/checkout',
+    prompt: 'Fix total(items): an empty checkout cart should total 0 cents, and populated carts '
+      + 'should sum price times quantity. Leave changes unstaged and uncommitted.',
+  },
+  'Verify one checkout fix before changing the second concern': {
+    fixture: 'atomic-code-changes/checkout',
+    prompt: 'Fix two checkout bugs: total(items) should return 0 for an empty cart and sum '
+      + 'price times quantity for populated carts; shipping(subtotal) should be free starting '
+      + 'at 5000 cents and cost 500 cents below that. Leave changes unstaged and uncommitted.',
+  },
   'Edit a procedure with STE vocabulary and short instructions': {
     fixture: 'write-docs/formatting/ste',
     prompt: 'Improve the procedure in document.md. Preserve its technical details.',
