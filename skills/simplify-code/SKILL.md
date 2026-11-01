@@ -10,7 +10,8 @@ description: Proactively simplify recently modified code while preserving exact 
 1. Preserve behavior exactly. Do not change outputs, side effects, or external contracts.
 2. Favor clarity over brevity. Explicit, readable code is preferred to compact or clever code.
 3. Reduce complexity. Simplify control flow, reduce nesting, and remove redundant logic.
-4. Keep scope focused. Only touch recently modified code unless the user explicitly asks for broader refactoring.
+4. Keep scope focused. Only touch recently modified code unless the user explicitly asks for
+   broader refactoring.
 5. Respect project conventions. Follow existing naming, formatting, and structural patterns.
 
 ## Guardrails

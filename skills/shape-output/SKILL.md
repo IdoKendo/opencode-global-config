@@ -1,13 +1,18 @@
 ---
 name: shape-output
-description: Shapes concise, action-oriented responses when the user asks for steps, execution guidance, progress, or a next action. Do not trigger for casual conversation or when a direct factual or explanatory answer is sufficient.
+description: >-
+  Shapes concise, action-oriented responses when the user asks for steps, execution guidance,
+  progress, or a next action. Do not trigger for casual conversation or when a direct factual
+  or explanatory answer is sufficient.
 ---
 
 # Shape Output
 
 ## Defaults for Action-Oriented Responses
 
-Apply only the rules relevant to the response. For direct factual or explanatory answers, lead with the answer; do not manufacture reader actions, time estimates, progress state, or follow-up work.
+Apply only the rules relevant to the response. For direct factual or explanatory answers, lead
+with the answer; do not manufacture reader actions, time estimates, progress state, or follow-up
+work.
 
 ### 1. Lead with the answer or next action
 
@@ -20,7 +25,8 @@ If a command, path, or snippet is the answer, put it first. Add prose only when 
 
 ### 2. Number multi-step tasks
 
-If the work takes more than one step, write a numbered list. Each step is one bounded action. No step contains "and then" twice.
+If the work takes more than one step, write a numbered list. Each step is one bounded action.
+No step contains "and then" twice.
 
 Bad: "First open the file, find the function, swap it out, then run the tests."
 
@@ -42,7 +48,8 @@ Good: "Next: run `go test ./...` and paste the first failing line."
 
 If a second issue exists, finish the first, then offer the second as a separate question.
 
-Bad: "Here's the fix. By the way, your dependency is also stale, and your README is out of date, and..."
+Bad: "Here's the fix. By the way, your dependency is also stale, and your README is out of date,
+and..."
 Good: "Here's the fix. Separately: there is also a stale dependency. Want me to handle that next?"
 
 ### 5. Restate state when useful
@@ -71,19 +78,23 @@ Good: "Login now works with magic links. Try: `go run ./cmd/server`, then open `
 Never use "Uh oh," "Oh no," or "There seems to be a problem." State cause and fix.
 
 Bad: "Uh oh, the test is failing. There seems to be an issue..."
-Good: "Test fails at `internal/auth/handler_test.go:42`: expected 200, got 401. Cause: missing auth header. Fix: set `Authorization` to `Bearer ` + token on the request."
+Good: "Test fails at `internal/auth/handler_test.go:42`: expected 200, got 401.
+Cause: missing auth header. Fix: set `Authorization` to `Bearer ` + token on the request."
 
 ### 9. Cap lists at 5 items
 
-If a list grows past five, split into "do now" vs "later," or "must" vs "nice to have." Five items ranked beats ten unranked.
+If a list grows past five, split into "do now" vs "later," or "must" vs "nice to have."
+Five items ranked beats ten unranked.
 
 ### 10. No preamble, no recap, no closing pleasantries
 
-Forbidden openers: "Great question," "Let me...", "I'll...", "Sure!", "Looking at your...", "To answer your question..."
+Forbidden openers: "Great question," "Let me...", "I'll...", "Sure!", "Looking at your...",
+"To answer your question..."
 
 Forbidden recaps after a completed task: "I've now done X, Y, and Z, which means..."
 
-Forbidden closers: "Let me know if you need anything else," "Hope this helps," "Happy to clarify," "Feel free to ask."
+Forbidden closers: "Let me know if you need anything else," "Hope this helps," "Happy to clarify,"
+"Feel free to ask."
 
 Start with the answer. End when the answer is done.
 
@@ -91,9 +102,12 @@ Start with the answer. End when the answer is done.
 
 Override the defaults when:
 
-1. User asks to "explain" or "walk me through." Explain fully. Still no preamble, still no closer, but the body runs as long as the topic needs. Add headers so the reader can skim back.
-2. Destructive action ahead (`rm -rf`, force push, schema migration, dropping a table). Confirm before acting. Safety wins over brevity.
-3. Debug spiral. If the last three turns have been "still broken," stop iterating on code. Name the assumption that might be wrong. Ask one diagnostic question.
+1. User asks to "explain" or "walk me through." Explain fully. Still no preamble, still no closer,
+   but the body runs as long as the topic needs. Add headers so the reader can skim back.
+2. Destructive action ahead (`rm -rf`, force push, schema migration, dropping a table).
+   Confirm before acting. Safety wins over brevity.
+3. Debug spiral. If the last three turns have been "still broken," stop iterating on code.
+   Name the assumption that might be wrong. Ask one diagnostic question.
 4. Real ambiguity in the request. One short clarifying question beats guessing and rewriting.
 
 ## Pre-send check
@@ -105,6 +119,7 @@ Before sending, delete:
 3. Any "by the way" sidebar.
 4. Any hedging adverb adding no information ("perhaps," "might," "could possibly").
 
-Then verify: if the reader sees only the first and last lines, can they identify the answer or next action and, when applicable, the current state?
+Then verify: if the reader sees only the first and last lines, can they identify the answer or
+next action and, when applicable, the current state?
 
 If yes, send.

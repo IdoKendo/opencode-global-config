@@ -1,16 +1,21 @@
 ---
 name: atomic-code-changes
-description: Use when implementing code changes, bug fixes, refactors, or multi-step edits that may sprawl; keeps work split into atomic, independently verifiable changes.
+description: >-
+  Use when implementing code changes, bug fixes, refactors, or multi-step edits that may sprawl;
+  keeps work split into atomic, independently verifiable changes.
 ---
 
 # Atomic Code Changes
 
 ## Scope
 
-- Keep each implementation step single-purpose, reviewable, verifiable, and independently reversible.
-- Apply this workflow to fixes, features, refactors, migrations, tests, and docs tied to a code change.
+- Keep each implementation step single-purpose, reviewable, verifiable, and independently
+  reversible.
+- Apply this workflow to fixes, features, refactors, migrations, tests, and docs tied to a code
+  change.
 - Use the smallest practical unit that still leaves the system coherent.
-- Stop at task boundaries; do not roll adjacent cleanups, formatting sweeps, or opportunistic fixes into the same change.
+- Stop at task boundaries; do not roll adjacent cleanups, formatting sweeps, or opportunistic
+  fixes into the same change.
 - If a requested change is naturally broad, decompose it into ordered atomic steps first.
 
 ## Atomic Change Definition
@@ -60,7 +65,8 @@ Split the work when you notice:
 ## Examples
 
 - **Atomic:** Rename one helper and update its direct callers, then run the affected tests.
-- **Not atomic:** Rename the helper, rewrite the module, update dependencies, and fix unrelated lint errors.
+- **Not atomic:** Rename the helper, rewrite the module, update dependencies, and fix unrelated
+  lint errors.
 - **Atomic:** Add a failing regression test, then make the smallest behavior change that passes it.
 - **Not atomic:** Add the regression test while also redesigning the surrounding API.
 
