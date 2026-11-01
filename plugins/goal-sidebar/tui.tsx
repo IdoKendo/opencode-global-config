@@ -67,8 +67,11 @@ function GoalPanel(props: { api: Plugin.Context; sessionID: string }) {
             ?? props.api.location ?? props.api.data.location.default()
         return await rpc.get({ sessionID }, { location }) as Goal | null
     })
-    const unsubscribe = rpc.events.on("changed", (event) => {
-        if (event.data.sessionID === props.sessionID) void refetch()
+    const unsubscribe = props.api.data.listen(({ details: event }) => {
+        if (event.type === "server.connected" ||
+            (event.type === "rpc.opencode.goal.changed" && event.data.sessionID === props.sessionID)) {
+            void refetch()
+        }
     })
     onCleanup(unsubscribe)
 
