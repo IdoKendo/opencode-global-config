@@ -241,9 +241,30 @@ test('corrected examples and verification claims cannot substitute for runtime r
 });
 
 test('blocked deployment handoff names the blocker and never claims success', async () => {
+  const captured = 'Verification is incomplete:\n\n'
+    + '- `./deploy.sh --dry-run` exited with code 1 because `DEPLOY_TOKEN` is missing.\n'
+    + '- Even with a token, `deploy.sh:14–16` always fails because the deployment service is unavailable. `docs/deployment.md` omits this limitation.\n'
+    + '- Markdown line lengths pass.\n\nNo files changed.';
+  for (const response of [
+    captured,
+    './deploy.sh --dry-run: verification is incomplete because DEPLOY_TOKEN is missing.',
+    './deploy.sh --dry-run exited with code 1 because DEPLOY_TOKEN is missing.',
+  ]) {
+    for (const step of [
+      'the handoff identifies "./deploy.sh --dry-run" as unverified',
+      'it states that the missing DEPLOY_TOKEN blocks verification',
+      'it does not claim that deployment verification passed',
+    ]) {
+      await invoke(step, world({ handoff: response }));
+    }
+    await control('it does not claim that deployment verification passed',
+      { handoff: response }, { handoff: `${response} Deployment verification passed.` }, 'doesNotMatch');
+  }
   const handoff = './deploy.sh --dry-run is unverified: missing DEPLOY_TOKEN blocks verification.';
   await control('the handoff identifies "./deploy.sh --dry-run" as unverified', { handoff },
     { handoff: './deploy.sh --dry-run passed.' }, 'match');
+  await control('the handoff identifies "./deploy.sh --dry-run" as unverified', { handoff },
+    { handoff: './deploy.sh --dry-run exited with code 0.' }, 'match');
   await control('it states that the missing DEPLOY_TOKEN blocks verification', { handoff },
     { handoff: handoff.replace('DEPLOY_TOKEN', 'credentials') }, /Missing "DEPLOY_TOKEN"/);
   await control('it does not claim that deployment verification passed', { handoff },

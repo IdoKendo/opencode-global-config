@@ -9,6 +9,7 @@ const contains = (text, expected) => assert.ok(text.includes(expected), `Missing
 const original = (world, file) => world.fixture(file);
 const document = (world) => world.read('document.md');
 const output = (value) => typeof value === 'string' ? value : JSON.stringify(value ?? '');
+const verificationFailure = /unverified|not verified|could not|cannot|can't|unable|block|not (?:run|executed)|fail|prevent|verification (?:is |remains )?incomplete|exit(?:ed|s)? (?:with )?(?:code |status )?[1-9]\d*\b/i;
 
 // Fixture-scoped checks, not a complete STE grammar or dictionary validator.
 function procedureText(text) {
@@ -348,17 +349,17 @@ Then('the handoff identifies {string} as unverified', function (command) {
   assert.ok(this.handoff.includes(command)
     || (/\bdocs\/deployment\.md(?::\d+)?\b/.test(this.handoff)
       && /(?:documented|the) command/i.test(this.handoff)), 'Missing deployment command or documented-command reference');
-  assert.match(this.handoff, /unverified|not verified|could not|cannot|can't|unable|blocked|not (?:run|executed)|failed/i);
+  assert.match(this.handoff, verificationFailure);
 });
 Then('it states that the missing DEPLOY_TOKEN blocks verification', function () {
   contains(this.handoff, 'DEPLOY_TOKEN');
   assert.match(normalize(this.handoff.replace(/[`*]/g, '')), /(?:missing|unset|not set|unavailable|not (?:provided|available|configured)|requires|required|absent)[^.!?]{0,60}DEPLOY_TOKEN|DEPLOY_TOKEN[^.!?]{0,60}(?:missing|unset|not set|unavailable|not (?:provided|available|configured)|required|absent)|without\s+DEPLOY_TOKEN/i);
-  assert.match(this.handoff, /block|cannot|could not|unable|unverified|fail|prevent/i);
+  assert.match(this.handoff, verificationFailure);
 });
 Then('it does not claim that deployment verification passed', function () {
   assert.doesNotMatch(plain(this.handoff), /(?:^|[.!?]\s*)(?:it\s+)?(?:passed|succeeded|was successful)\b/i);
   assert.doesNotMatch(plain(this.handoff), /(?:deployment|dry[- ]run|verification)[^.!?]{0,45}(?<!not )(?<!never )(?:passed|succeeded|successful(?:ly)?|verified successfully)|all (?:checks|examples|commands) (?:passed|verified)/i);
-  assert.match(this.handoff, /unverified|blocked|fail|could not|cannot|unable|not verified/i);
+  assert.match(this.handoff, verificationFailure);
 });
 
 Given('{string} incorrectly describes the default retry count as 3', async function (file) {

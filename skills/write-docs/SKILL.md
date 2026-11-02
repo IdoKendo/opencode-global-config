@@ -14,7 +14,9 @@ Make complex systems feel obvious to the next reader.
 - Read the code and existing docs. Learn the shape before you write.
 - Update documentation made inaccurate by the requested change, even when the user did not name it
   explicitly.
-- Report unrelated or adjacent documentation drift without expanding the task to fix it.
+- Inspect linked guides and adjacent documentation for the component you change.
+  Report unrelated drift in the final handoff, with the file path and incorrect claim or command.
+  Keep this inspection within the affected component; do not expand the task to fix unrelated drift.
 - Match the project's conventions and tone. Reuse section names, heading capitalization, and
   section order from comparable existing docs; check the finished document against that example.
 - Keep the structure clear: start high-level, then move toward details.
