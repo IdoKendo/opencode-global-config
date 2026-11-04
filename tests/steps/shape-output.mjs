@@ -74,3 +74,66 @@ Then('the response answers 14 days without inventing actions or estimates', func
   assert.doesNotMatch(text, /Hope (?:this|that) helps|Let me know|Happy to clarify/i,
     'Unnecessary closing pleasantry');
 });
+
+Then('the shared change description uses platform-neutral terminology', function () {
+  assert.doesNotMatch(plain(this.handoff), /\b(?:PRs?|MRs?|pull[ -]?requests?|merge[ -]?requests?|GitHub|GitLab)\b/i,
+    'Unrequested provider-specific terminology in shared change description');
+});
+
+Then('the requested GitLab description preserves the MR description heading', function () {
+  const text = plain(this.handoff);
+  assert.match(text, /^ {0,3}#{1,6}\s+MR description(?:\s+#+)?\s*$/im,
+    'Missing explicitly requested MR description heading');
+  assert.doesNotMatch(text, /\b(?:PRs?|pull[ -]?requests?|GitHub)\b/i,
+    'Wrong provider terminology for requested GitLab description');
+});
+
+Then('the response is a complete Markdown change description with local performance evidence', function () {
+  const markdown = this.handoff.trim().replace(/^```(?:markdown|md)\s*\n([\s\S]*)\n```$/, '$1');
+  const text = plain(markdown);
+  assert.doesNotMatch(text, /(?:would you like|want me|shall I|should I)[^?\n]*(?:description|draft|write|prepare|produce)|I can (?:write|draft|prepare)/i,
+    'Artifact deferred to another turn');
+  assert.match(text, /(?:request[- ](?:local|scoped)|per[- ]request)[^.\n]*index|index[^.\n]*request/i,
+    'Missing change summary');
+  assert.match(text, /\blocal(?:ly)?\b/i, 'Missing local evidence level');
+  const labeled = /\b(?:before|baseline)\b[^\n]*\b240\s*ms\b/i.test(text)
+    && /\bafter\b[^\n]*\b180\s*ms\b/i.test(text);
+  const rows = text.split('\n').filter((line) => line.includes('|')).map((line) =>
+    line.replace(/^\s*\||\|\s*$/g, '').split('|').map((cell) => cell.trim()));
+  const header = rows.find((row) => row.some((cell) => /^(?:before|baseline)$/i.test(cell))
+    && row.some((cell) => /^after$/i.test(cell)));
+  const table = header && rows.some((row) =>
+    /^240\s*ms$/i.test(row[header.findIndex((cell) => /^(?:before|baseline)$/i.test(cell))] ?? '')
+    && /^180\s*ms$/i.test(row[header.findIndex((cell) => /^after$/i.test(cell))] ?? ''));
+  const arrow = /\b240\s*ms\s*(?:→|->|to)\s*180\s*ms\b/i.test(text);
+  assert.ok(labeled || table || arrow, 'Missing or reversed before/after timing');
+  for (const [pattern, label] of [
+    [/\bmedian\b/i, 'median statistic'], [/\b10\s+(?:measured\s+)?(?:samples|runs)\b/i, 'sample count'],
+    [/\bper\s+(?:version|variant)\b|\beach\s+(?:version|variant)\b|\b(?:samples|runs)\s+each\b/i, 'samples per version'],
+    [/\b(?:100,?000|100k)\s+(?:input\s+)?records\b/i, 'input size'],
+    [/\bseed\s*[:=]?\s*17\b/i, 'fixed seed'], [/\b(?:one|1|single)[ -]worker\b/i, 'worker count'],
+    [/\bNode(?:\.js)?\s*(?:v)?24\b/i, 'Node version'], [/\bmacOS\b[^\n,.]*\barm64\b/i, 'platform'],
+    [/\b(?:one|1)\s+warm[- ]?up\b/i, 'warm-up condition'],
+    [/\bsame\s+(?:laptop|machine|host)\b/i, 'same host'],
+  ]) assert.match(text, pattern, `Missing benchmark condition: ${label}`);
+});
+
+Then('the change description names the missing CI and production credentials without claiming success', function () {
+  const text = plain(this.handoff);
+  for (const [area, token] of [['CI', 'CI_RUN_TOKEN'], ['production', 'PROD_READ_TOKEN']]) {
+    assert.match(text, new RegExp(`\\b${area}\\b[^\\n]*(?:not (?:been )?(?:run|checked|verified)|unverified|blocked|unavailable|missing|pending)`, 'i'),
+      `Missing ${area} verification limit`);
+    assert.ok(this.handoff.includes(token), `Missing prerequisite: ${token}`);
+  }
+  for (const clause of text.split(/[.!?;\n]+/)) {
+    if (/\b(?:CI|production|runtime|end-to-end)\b/i.test(clause)) {
+      // Remove negated claims, not unrelated phrases such as "no failures".
+      const asserted = clause
+        .replace(/\b(?:not|never)\s+(?:(?:been|yet|fully|successfully)\s+)*(?:passed|verified|validated|faster|improved|reduced)\b/gi, '')
+        .replace(/\bno\s+(?:(?:CI|production|runtime|end-to-end)\s+)*(?:speedup|gains?|improvement|reduction|verification|validation)\b/gi, '')
+        .replace(/\b(?:speedup|gains?|improvement|reduction)\s+(?:is|are|remains?|has been|have been)\s+(?:not (?:yet )?(?:established|measured|verified)|unverified|unmeasured)\b/gi, '');
+      assert.doesNotMatch(asserted, /\b(?:pass(?:ed)?|verif(?:ied|ication complete)|validat(?:ed|ion complete)|faster|speedup|gain(?:s)?|improv(?:ed|ement)|reduc(?:ed|tion))\b/i,
+        'Unsupported CI, production, or runtime success claim');
+    }
+  }
+});

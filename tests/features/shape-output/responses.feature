@@ -22,3 +22,19 @@ Feature: Responses matched to the reader's next decision
     When the user asks the agent to give the retention period
     Then the response answers 14 days without inventing actions or estimates
     And shape-output is not selected for the factual answer
+
+  Scenario: Deliver a performance change description with measured evidence and blocked checks
+    Given a clean Git working tree and index
+    When the user asks the agent to write a paste-ready Markdown change description
+    Then shape-output is selected through normal skill discovery
+    And the response is a complete Markdown change description with local performance evidence
+    And the change description names the missing CI and production credentials without claiming success
+    And the shared change description uses platform-neutral terminology
+
+  Scenario: Preserve GitLab MR terminology when explicitly requested
+    Given a clean Git working tree and index
+    When the user asks the agent to write a paste-ready GitLab MR description with an MR description heading
+    Then shape-output is selected through normal skill discovery
+    And the response is a complete Markdown change description with local performance evidence
+    And the change description names the missing CI and production credentials without claiming success
+    And the requested GitLab description preserves the MR description heading

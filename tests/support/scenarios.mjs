@@ -45,6 +45,15 @@ export const scenarios = {
     fixture: 'shape-output/factual',
     prompt: 'According to policy.txt, how many days are rehearsal archives retained?',
   },
+  'Deliver a performance change description with measured evidence and blocked checks': {
+    fixture: 'shape-output/performance',
+    prompt: 'Use performance-evidence.md to write a paste-ready Markdown change description.',
+  },
+  'Preserve GitLab MR terminology when explicitly requested': {
+    fixture: 'shape-output/performance',
+    prompt: 'Use performance-evidence.md to write a paste-ready Markdown GitLab MR description '
+      + 'with an "MR description" heading.',
+  },
   'Clean up pricing changes without changing boundary results': {
     fixture: 'simplify-code/project',
     simplifyCase: 'pricing',

@@ -1,9 +1,9 @@
 ---
 name: shape-output
 description: >-
-  Shapes concise, action-oriented responses when the user asks for steps, execution guidance,
-  progress, or a next action. Do not trigger for casual conversation or when a direct factual
-  or explanatory answer is sufficient.
+  Shape steps, execution guidance, progress updates, action-task handoffs, and requested artifacts.
+  Use when delivering completed work or a next action. Do not trigger for casual conversation or
+  direct factual or explanatory answers.
 ---
 
 # Shape Output
@@ -66,9 +66,13 @@ Give a concrete estimate only when it helps the user plan and available evidence
 Bad: "This will take some work."
 Good: "About 15 minutes if tests already cover this. An afternoon if not."
 
-### 7. Make completed work visible
+### 7. Deliver the result
 
-After completing work, state the concrete outcome when useful. Do not bury it in a recap.
+Return the requested artifact in the requested format without another offer to produce it.
+Include relevant file/line or evidence references, checks actually run, and exact blockers.
+For performance work, report before-and-after measurements, conditions, and limitations.
+Distinguish local benchmark results from end-to-end runtime results.
+Include large code blocks or file contents only when the user asks for them.
 
 Bad: "I've made some changes to the auth flow. Among other things..."
 Good: "Login now works with magic links. Try: `go run ./cmd/server`, then open `/login`."
