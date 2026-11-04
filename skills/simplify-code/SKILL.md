@@ -22,6 +22,9 @@ description: Proactively simplify recently modified code while preserving exact 
 - Avoid clever tricks, dense one-liners, or nested ternaries.
 - Do not remove useful abstractions that improve organization.
 - Do not add comments unless they clarify a non-obvious block.
+- Remove obsolete relocation comments when moving or deleting code.
+- If a structure remains confusing after simplification, use an ASCII diagram in a comment when it
+  helps explain that structure.
 
 ## Process
 

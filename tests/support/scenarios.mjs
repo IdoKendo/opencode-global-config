@@ -57,12 +57,18 @@ export const scenarios = {
   'Clean up pricing changes without changing boundary results': {
     fixture: 'simplify-code/project',
     simplifyCase: 'pricing',
-    prompt: 'Clean up the current working-tree changes in workflow.py.',
+    prompt: 'Clean up the current working-tree changes in workflow.mjs.',
   },
   'Clean up delivery changes without changing callback effects': {
     fixture: 'simplify-code/project',
     simplifyCase: 'delivery',
-    prompt: 'Clean up the current working-tree changes in workflow.py.',
+    prompt: 'Clean up the current working-tree changes in workflow.mjs.',
+  },
+  'Remove an obsolete relocation note from changed pricing code': {
+    fixture: 'simplify-code/relocation',
+    includes: ['simplify-code/project'],
+    simplifyCase: 'pricing',
+    prompt: 'Clean up the current working-tree changes in workflow.mjs.',
   },
   'Prune redundant shipping tests without losing checkout protection': {
     fixture: 'test-audit/prune',

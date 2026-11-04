@@ -19,3 +19,12 @@ Feature: Clean up recently modified code
     And the changed workflow has less nested control flow
     And delivery preserves callback order, identity, and exceptions
     And cleanup leaves unrelated code and the Git index and HEAD unchanged
+
+  Scenario: Remove an obsolete relocation note from changed pricing code
+    Given uncommitted pricing changes with redundant nested branches
+    And an obsolete relocation note in pricing beside unrelated user work
+    When the user asks the agent to clean up the working-tree changes
+    Then the agent selects the simplify-code skill normally
+    And the obsolete relocation note is removed from pricing
+    And pricing preserves zero, negative, threshold, and member results
+    And cleanup leaves unrelated code and the Git index and HEAD unchanged
