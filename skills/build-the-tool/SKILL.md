@@ -1,8 +1,9 @@
 ---
 name: build-the-tool
 description: >-
-  Use for edits, migrations, analyses, or checks where repeatable automation materially improves
-  correctness or verification. Reuse an existing tool or build the smallest rerunnable check.
+  Use when creating reusable scripts, validators, or evidence gates, and for edits, migrations,
+  analyses, or checks where repeatable automation materially improves correctness or verification.
+  Reuse an existing tool or build the smallest rerunnable check.
 ---
 
 # Build the Tool
