@@ -17,6 +17,8 @@ description: >-
 - Stop at task boundaries; do not roll adjacent cleanups, formatting sweeps, or opportunistic
   fixes into the same change.
 - If a requested change is naturally broad, decompose it into ordered atomic steps first.
+- Add dependencies, abstractions, scripts, configuration, or persistent files only when the outcome
+  requires them.
 
 ## Atomic Change Definition
 
@@ -30,10 +32,15 @@ An atomic change is:
 
 ## Workflow
 
+Before a refactor or migration, inspect the existing implementation or named reference. Identify
+affected capabilities, integrations, and operational effects, including logs and metrics. Use this
+inventory to choose behavior-preservation checks.
+
 1. **Name the outcome.** Write the next change as one sentence: "Make X do Y."
 2. **Choose the verification.** Decide the smallest test, build, lint, or inspection that proves it.
 3. **Edit only for that outcome.** Touch the minimum files needed; defer nearby improvements.
-4. **Run the completion gate.** Verify before starting another concern.
+4. **Run the completion gate.** Start with the smallest relevant checks. Expand for the affected
+   scope and risk before starting another concern.
 5. **Reassess scope.** If the next edit has a different purpose, make it a separate step.
 
 ## Completion Gates
@@ -42,7 +49,12 @@ Before moving on, confirm:
 
 - The change matches the named outcome.
 - Verification passed or the remaining gap is explicitly reported.
+- Use the repository's supported commands and available project verification skills. Run required CI
+  or runtime checks when access permits. A smoke test does not complete a larger validation request.
 - No unrelated formatting, cleanup, dependency, or behavior change slipped in.
+- Inspect the final diff for unnecessary complexity, duplication, and temporary artifacts. Remove
+  only artifacts you created. Keep requested evidence separate from functional changes and outside
+  the repository unless the user asks to include it.
 - Follow-up work is noted instead of half-implemented.
 
 ## Scope Tripwires

@@ -22,6 +22,15 @@ export const scenarios = {
       + 'price times quantity for populated carts; shipping(subtotal) should be free starting '
       + 'at 5000 cents and cost 500 cents below that. Leave changes unstaged and uncommitted.',
   },
+  'Migrate dispatch without losing operational effects': {
+    fixture: 'atomic-code-changes/dispatch',
+    prompt: 'Migrate dispatch.mjs to the object transport API described in README.md.',
+  },
+  'Ask before adding a Markdown rendering dependency': {
+    fixture: 'atomic-code-changes/dependency',
+    prompt: 'Implement CommonMark rendering for the preview, including nested lists and fenced code blocks. '
+      + 'Start by inspecting the project.',
+  },
   'Give ordered guidance for a local archive rehearsal': {
     fixture: 'shape-output/rehearsal',
     prompt: 'Read rehearsal.txt. How should I carry out this local archive rehearsal? '
