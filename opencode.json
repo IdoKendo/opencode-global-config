@@ -8,7 +8,7 @@
         },
         {
             "action": "external_directory",
-            "resource": "~/Work/**",
+            "resource": "{env:XDG_WORK}/**",
             "effect": "allow"
         },
         {

@@ -19,7 +19,8 @@ async function fixture(name, initialStatuses = {}) {
   const [statuses, setStatuses] = solid.createSignal(initialStatuses);
   const [permissions, setPermissions] = solid.createSignal({});
   const [forms, setForms] = solid.createSignal({});
-  let listener;
+  const listeners = new Set();
+  const listener = event => { for (const callback of listeners) callback(event); };
   let unsubscribed = false;
   const { Plugin: { define } } = await import('@opencode/plugin/tui');
   const exports = {};
@@ -27,7 +28,7 @@ async function fixture(name, initialStatuses = {}) {
     compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
   }).outputText;
   vm.runInNewContext(code, {
-    exports, AbortController, console: { error: (...args) => errors.push(args) },
+    exports, AbortController, setTimeout, clearTimeout, console: { error: (...args) => errors.push(args) },
     process: { platform: 'darwin', env: {} },
     require(name) {
       if (name === '@opencode/plugin/tui') return { Plugin: { define } };
@@ -63,7 +64,9 @@ async function fixture(name, initialStatuses = {}) {
     location: { directory: '/project' },
     client: { session: { get: async ({ sessionID }) => { fetched.push(sessionID); return sessions[sessionID]; } } },
     data: {
-      listen(callback) { listener = callback; return () => { unsubscribed = true; listener = undefined; }; },
+      listen(callback) { listeners.add(callback); return () => { unsubscribed = true; listeners.delete(callback); }; },
+      on(type, callback) { return this.listen(({ details }) => { if (details.type === type) callback(details); }); },
+      shell: { list: () => [], sync: async () => {}, invalidate() {} },
       location: { default: () => ({ directory: '/project' }) },
       session: {
         get: id => cached[id], root: id => cached[id]?.parentID ?? id,
@@ -75,7 +78,7 @@ async function fixture(name, initialStatuses = {}) {
     },
     ui: { router: { current: route }, tabs: { list: tabs } },
   });
-  if (name === 'notification') assert.equal(typeof listener, 'function', 'must subscribe through CLI data.listen');
+  if (name === 'notification') assert.equal(listeners.size, 1, 'must subscribe through CLI data.listen');
   async function settle() {
     await new Promise(resolve => setImmediate(resolve));
     for (let i = 0; i < executions.length; i++) await executions[i];
