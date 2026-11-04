@@ -5,5 +5,5 @@ The default retry count is 3. Set `--attempts` to a positive integer to override
 ## Examples
 
 ```sh
-python worker.py --attempts 2
+node worker.mjs --attempts 2
 ```

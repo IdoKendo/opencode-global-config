@@ -85,6 +85,16 @@ export const scenarios = {
     fixture: 'test-audit/domain-ownership',
     prompt: 'Read task.txt and add regression coverage for the Copper delivery migration.',
   },
+  'Replace a copied suite inventory with authoritative maintenance guidance': {
+    fixture: 'write-docs/structure/inventory',
+    includes: ['write-docs/structure/common'],
+    prompt: 'Improve the test suite maintenance guide so a new maintainer can use the suite.',
+  },
+  'Tidy redundant suite guides into one maintenance entry point': {
+    fixture: 'write-docs/structure/tidy',
+    includes: ['write-docs/structure/common'],
+    prompt: 'Tidy the test suite documentation structure, including removal of redundant documentation.',
+  },
   'Edit a procedure with STE vocabulary and short instructions': {
     fixture: 'write-docs/formatting/ste',
     prompt: 'Improve the procedure in document.md. Preserve its technical details.',

@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { access } from 'node:fs/promises';
 import path from 'node:path';
 import { Given, Then } from '@cucumber/cucumber';
+import ts from 'typescript';
+import { files } from '../support/harness.mjs';
 
 const normalize = (text) => text.replace(/\s+/g, ' ').trim();
 const plain = (text) => normalize(text.replace(/[`*_]/g, ''));
@@ -151,7 +153,7 @@ Given('a Markdown document with these constructs exceeding 100 characters per li
   const parts = protectedParts(text);
   assert.ok(parts.tables.some((line) => line.length > 100));
   assert.ok(parts.urls.some((url) => url.length > 100));
-  for (const language of ['text', 'python']) {
+  for (const language of ['text', 'javascript']) {
     assert.ok(fences(text).some((block) => block.language === language
       && block.lines.slice(1, -1).some((line) => line.length > 100)));
   }
@@ -196,7 +198,7 @@ Then('the document still names CacheBox and its TTL of 60 seconds', async functi
 });
 Then('it still states that expiration is handled on the next read', async function () {
   const affirmative = plain(await document(this))
-    .replace(/,\s*not\s+(?:by\s+)?(?:a\s+)?background timer/gi, '')
+    .replace(/,\s*not\s+(?:(?:by|through)\s+)?(?:a\s+)?background timer/gi, '')
     .split(/[.!?]/)
     .filter((sentence) => !/\b(?:not|never|no)\b|n't\b/i.test(sentence)).join('.');
   assert.match(affirmative, /(?:expir\w*|remov\w*)[^.]{0,100}\bnext read\b/i);
@@ -212,13 +214,13 @@ Then('it omits {string}, {string}, and {string}', async function (first, second,
 });
 
 Given('a project with a runnable {string} command', async function (command) {
-  assert.equal(command, 'python worker.py --attempts N');
+  assert.equal(command, 'node worker.mjs --attempts N');
   await workerRun(this, command.replace(/ N$/, ' 3'), 0, 'Retry attempts: 3');
 });
 Given('the command accepts positive integers and rejects 0 with {string}', async function (error) {
-  await workerRun(this, 'python worker.py --attempts 1', 0, 'Retry attempts: 1');
-  await workerRun(this, 'python worker.py --attempts 0', 1, error);
-  await workerRun(this, 'python worker.py --attempts 1.5', 1, 'attempts must be an integer');
+  await workerRun(this, 'node worker.mjs --attempts 1', 0, 'Retry attempts: 1');
+  await workerRun(this, 'node worker.mjs --attempts 0', 1, error);
+  await workerRun(this, 'node worker.mjs --attempts 1.5', 1, 'attempts must be an integer');
 });
 Given('existing guides use sentence-case headings and sections named {string} and {string}', async function (first, second) {
   const text = await original(this, 'docs/output.md');
@@ -230,7 +232,9 @@ Given('existing guides use sentence-case headings and sections named {string} an
 Then('the guide uses sentence-case headings and {string} and {string} sections', async function (first, second) {
   const text = await guide(this);
   const headings = [...text.matchAll(/^#{1,6}\s+(.+)$/gm)].map((match) => match[1]);
-  for (const section of [first, second]) assert.ok(headings.includes(section));
+  for (const section of [first, second]) {
+    assert.ok(headings.includes(section), `Missing project section: ${section}`);
+  }
   for (const heading of headings) {
     assert.ok(/^[A-Z]/.test(heading), `Heading lacks sentence case: ${heading}`);
     const words = heading.replace(/`[^`]*`/g, '').split(/\s+/).slice(1);
@@ -255,39 +259,79 @@ Then('the zero-attempt example documents the error {string}', async function (er
 });
 Then('command examples appear in syntax-highlighted code blocks', async function () {
   const text = await guide(this);
-  const commands = fences(text).filter((block) => /python(?:3)?\s+worker\.py/.test(block.text));
+  const commands = fences(text).filter((block) => /node\s+worker\.mjs/.test(block.text));
   assert.ok(commands.length > 0);
   for (const block of commands) assert.match(block.language, /^(?:sh|bash|shell|shell-session|console|zsh)$/);
 });
 Then('source references use file paths and line numbers that locate the documented behavior', async function () {
   const text = await guide(this);
-  const references = [...text.matchAll(/(?:[\w./-]*\/)?worker\.py:(\d+)(?:[-–](\d+))?/g)];
-  assert.ok(references.length > 0, 'Missing worker.py:line source references');
-  const source = (await this.read('worker.py')).split('\n');
-  const located = [];
+  const references = [...text.matchAll(/(?:[\w./-]*\/)?worker\.mjs:(\d+)(?:[-–](\d+))?/g)];
+  assert.ok(references.length > 0, 'Missing worker.mjs:line source references');
+  const sourceText = await this.read('worker.mjs');
+  const source = ts.createSourceFile('worker.mjs', sourceText, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const nodes = [];
+  const visit = (node) => { nodes.push(node); ts.forEachChild(node, visit); };
+  visit(source);
+  const lineAt = (position) => source.getLineAndCharacterOfPosition(position).line + 1;
+  const line = (node) => lineAt(node.getStart(source));
+  const functions = nodes.filter((node) => ts.isFunctionDeclaration(node) && node.body);
+  // This fixture rejects non-positive counts with a <= 0 guard and a throw.
+  // Parse code so comments, strings, and braces inside them cannot act as evidence.
+  const guards = nodes.filter(ts.isIfStatement).flatMap((node) => {
+    const branch = ts.isBlock(node.thenStatement) ? node.thenStatement.statements : [node.thenStatement];
+    const rejections = branch.filter(ts.isThrowStatement);
+    return rejections.length ? [{ condition: node.expression, rejections }] : [];
+  });
+  const positiveGuards = guards.filter(({ condition }) => {
+    if (!ts.isBinaryExpression(condition)) return false;
+    const { left, operatorToken, right } = condition;
+    return ts.isIdentifier(left) && operatorToken.kind === ts.SyntaxKind.LessThanEqualsToken
+      && (ts.isNumericLiteral(right) || ts.isBigIntLiteral(right)) && ['0', '0n'].includes(right.text);
+  });
+  const within = (node, container) => node.pos >= container.pos && node.end <= container.end;
+  const validatorFunctions = functions.filter((fn) => positiveGuards.some(({ condition }) =>
+    within(condition, fn.body)));
+  const validation = guards.filter((guard) => positiveGuards.includes(guard)
+    || validatorFunctions.some((fn) => within(guard.condition, fn.body)))
+    .flatMap(({ condition, rejections }) => [condition, ...rejections]);
+  const validators = new Set(validatorFunctions.map((fn) => fn.name?.text));
+  const calls = nodes.filter((node) => ts.isCallExpression(node)
+    && ts.isIdentifier(node.expression) && validators.has(node.expression.text));
+  const parserFunctions = functions.filter((fn) => calls.some((node) => within(node, fn.body)));
+  const parsers = new Set(parserFunctions.map((fn) => fn.name?.text));
+  const parserCalls = nodes.filter((node) => ts.isCallExpression(node)
+    && ts.isIdentifier(node.expression) && parsers.has(node.expression.text));
+  // Option parsing and integer checks need not use the attempts variable directly.
+  const behaviorFunctions = [...validatorFunctions, ...parserFunctions];
+  const identifiers = nodes.filter((node) => ts.isIdentifier(node) && (node.text === 'attempts'
+    || behaviorFunctions.some((fn) => within(node, fn.body))));
+  // The CLI catch block reports validation failures without naming the attempts variable.
+  const handlers = nodes.filter((node) => ts.isTryStatement(node) && node.catchClause
+    && parserCalls.some((call) => within(call, node.tryBlock))).map((node) => node.catchClause);
+  const handling = [...handlers, ...nodes.filter((node) => (ts.isCallExpression(node)
+    || ts.isBinaryExpression(node)) && handlers.some((handler) => within(node, handler.block)))];
+  let locatedValidation = false;
   for (const reference of references) {
     const start = Number(reference[1]);
-    const end = Number(reference[2] ?? start);
-    assert.ok(start >= 1 && end >= start && end <= source.length);
+    let end = Number(reference[2] ?? start);
+    assert.ok(start >= 1 && end >= start && end <= sourceText.split('\n').length);
     const referencedPath = reference[0].split(':')[0];
-    assert.equal(path.resolve(this.workspace, referencedPath), path.join(this.workspace, 'worker.py'));
-    let lines = source.slice(start - 1, end).join('\n');
+    assert.equal(path.resolve(this.workspace, referencedPath), path.join(this.workspace, 'worker.mjs'));
     // A reference to a function definition locates its body, not just the signature.
-    if (start === end && /^def (?:main|positive_integer)\(/.test(source[start - 1])) {
-      let boundary = start;
-      while (boundary < source.length && /^(?:\s|$)/.test(source[boundary])) boundary += 1;
-      lines = source.slice(start - 1, boundary).join('\n');
-    }
-    assert.match(lines, /attempts|positive_integer|parser\.parse_args\(/,
+    const definition = start === end && functions.find((fn) => line(fn) === start);
+    if (definition) end = lineAt(definition.end - 1);
+    const selected = (node) => line(node) >= start && line(node) <= end;
+    const validates = [...validation, ...calls].some(selected);
+    assert.ok(validates || handling.some(selected) || identifiers.some(selected),
       `Reference does not locate attempts behavior: ${reference[0]}`);
-    located.push(lines);
+    locatedValidation ||= validates;
   }
-  assert.match(located.join('\n'), /attempts <= 0|attempts must be positive|type=positive_integer/, 'References must locate validation, not just a mention');
+  assert.ok(locatedValidation, 'References must locate validation, not just a mention');
 });
 
 Given("the worker's default retry count has changed from 3 to 5", async function () {
   defaultCount(await original(this, 'README.md'), 3);
-  await workerRun(this, 'python worker.py', 0, 'Retry attempts: 5');
+  await workerRun(this, 'node worker.mjs', 0, 'Retry attempts: 5');
 });
 Given('{string} and {string} still describe the default as 3', async function (first, second) {
   for (const file of [first, second]) defaultCount(await original(this, file), 3);
@@ -314,7 +358,7 @@ Given('{string} recommends {string}', async function (file, command) {
   contains(await original(this, file), command);
 });
 Given('that command exits with an unknown-option error', async function () {
-  await workerRun(this, 'python worker.py --retry 3', 1, 'unrecognized arguments: --retry 3');
+  await workerRun(this, 'node worker.mjs --retry 3', 1, 'unrecognized arguments: --retry 3');
 });
 Given('the implementation accepts {string}', async function (command) {
   await workerRun(this, command, 0, 'Retry attempts: 3');
@@ -323,13 +367,13 @@ Then('the guide recommends {string}', async function (command) {
   const text = await this.read('docs/usage.md');
   contains(text, command);
   assert.ok(fences(text).some((block) => block.text.includes(command)));
-  for (const block of fences(text)) assert.doesNotMatch(block.text, /python(?:3)?\s+worker\.py\b[^\n]*--retry\b/);
+  for (const block of fences(text)) assert.doesNotMatch(block.text, /node\s+worker\.mjs\b[^\n]*--retry\b/);
   assert.doesNotMatch(text, /(?:choose|set|configure)[^.\n]{0,80}\bwith\s+`?--retry\b/i);
 });
 Then('the agent executes the corrected command successfully', function () {
   assert.ok(this.executions.some(({ args, code }) => code === 0
     && args.length === 2 && args[0] === '--attempts' && args[1] === '3'),
-  'No successful runtime receipt for worker.py --attempts 3');
+  'No successful runtime receipt for worker.mjs --attempts 3');
 });
 Then('the handoff identifies the corrected option and the successful verification', function () {
   contains(this.handoff, '--attempts');
@@ -366,7 +410,7 @@ Given('{string} incorrectly describes the default retry count as 3', async funct
   defaultCount(await original(this, file), 3);
 });
 Given('the implementation sets the default retry count to 5', async function () {
-  await workerRun(this, 'python worker.py', 0, 'Retry attempts: 5');
+  await workerRun(this, 'node worker.mjs', 0, 'Retry attempts: 5');
 });
 Then('{string} describes the default retry count as 5', async function (file) {
   defaultCount(await this.read(file), 5);
@@ -386,12 +430,95 @@ Then('the Git HEAD is unchanged', async function () {
 });
 Then('the handoff identifies the edited file and the implementation evidence checked', function () {
   contains(this.handoff, 'docs/retries.md');
-  assert.ok(this.handoff.includes('worker.py')
+  assert.ok(this.handoff.includes('worker.mjs')
     || /\bworker(?:['’]s)?\s+(?:default\s+)?output\b/i.test(this.handoff),
   'Missing implementation source or worker-output reference');
   assert.match(this.handoff, /\b5\b/);
   assert.match(this.handoff, /read|inspect|check|verif|confirm|default|source|implementation/i);
-  assert.ok(this.tools.some((tool) => /worker\.py/.test(output(tool.input))
-    && /default\s*=\s*5|Retry attempts: 5/.test(output(tool.output))
+  assert.ok(this.tools.some((tool) => /worker\.mjs/.test(output(tool.input))
+    && /\battempts\s*=\s*5n\b|Retry attempts: 5/.test(output(tool.output))
     && !/error|fail|cancel/i.test(tool.status ?? '')), 'Missing recorded implementation evidence');
+});
+
+async function suiteDocuments(world) {
+  const { input } = JSON.parse(await world.read('tests/config.json'));
+  return [...await files(world.workspace)].filter(([name]) => name.endsWith('.md')
+    && name !== input);
+}
+
+Given('a runnable document-check suite with a copied scenario inventory in its guide', async function () {
+  contains(await this.fixture('tests/README.md'), 'Preserve the project start command');
+  const result = await this.run('node tests/run.mjs');
+  assert.equal(result.code, 0, result.stderr);
+  contains(result.stdout, 'Document checks passed');
+});
+
+Given('a document-check suite with redundant fixture guidance', async function () {
+  contains(await this.fixture('tests/fixtures/README.md'), 'npm test');
+  contains(await this.fixture('tests/README.md'), 'npm test');
+});
+
+Then('the suite guide links to existing behavior, runner, configuration, and command sources', async function () {
+  const current = await files(this.workspace);
+  const text = current.get('tests/README.md');
+  assert.ok(text?.trim(), 'Missing suite maintenance entry point');
+  const definitions = new Map([...text.matchAll(/^\s*\[([^\]]+)\]:\s*<?([^\s>]+)>?/gm)]
+    .map(([, label, target]) => [label.toLowerCase(), target]));
+  const links = [...text.matchAll(/(?<!!)\[[^\]]+\]\(<?([^\s)>]+)>?(?:\s+"[^"]*")?\)/g)]
+    .map(([, target]) => target);
+  for (const [, label, id] of text.matchAll(/\[([^\]]+)\]\[([^\]]*)\]/g)) {
+    links.push(definitions.get((id || label).toLowerCase()) ?? 'MISSING-LINK');
+  }
+  const resolved = new Set();
+  for (const link of links) {
+    if (/^[a-z]+:|^#/i.test(link)) continue;
+    const target = path.posix.normalize(path.posix.join('tests', decodeURIComponent(link.split('#')[0])))
+      .replace(/\/$/, '');
+    assert.ok(current.has(target) || [...current.keys()].some((file) => file.startsWith(`${target}/`)),
+      `Broken local link: ${link}`);
+    resolved.add(target);
+  }
+  for (const [category, alternatives] of [
+    ['behavior', ['tests/features', 'tests/features/documents.feature']],
+    ['runner', ['tests/run.mjs']], ['configuration', ['tests/config.json']],
+    ['commands', ['package.json']],
+  ]) assert.ok(alternatives.some((target) => resolved.has(target)), `Missing authoritative ${category} link`);
+});
+
+Then('the suite guide gives a working command from the project root', async function () {
+  const text = await this.read('tests/README.md');
+  assert.match(text, /\b(?:project|repository|repo) root\b/i, 'Missing execution directory');
+  assert.match(text, /\bNode(?:\.js)?\b/, 'Missing Node prerequisite');
+  const commands = fences(text).flatMap((block) => block.lines.slice(1, -1))
+    .map((line) => line.trim().replace(/^\$\s+/, ''));
+  const command = commands.find((line) => /^(?:npm (?:test|run test)|node (?:\.\/)?tests\/run\.mjs)$/.test(line));
+  assert.ok(command, 'Missing runnable suite command');
+  const result = await this.run(command);
+  assert.equal(result.code, 0, result.stderr);
+  contains(result.stdout, 'Document checks passed');
+});
+
+Then('suite maintenance prose does not duplicate scenario inventories, counts, or source details', async function () {
+  const docs = await suiteDocuments(this);
+  assert.ok(docs.some(([name, text]) => name === 'tests/README.md' && text.trim()),
+    'Missing suite maintenance entry point');
+  // Check all maintenance Markdown, including inventories moved behind a README link.
+  for (const [name, text] of docs) {
+    const prose = plain(text.replace(/\[[^\]]*\]\([^)]*\)/g, 'LINK'));
+    assert.doesNotMatch(prose, /Preserve the project start command|Preserve the local service address/i,
+      `Copied scenario inventory in ${name}`);
+    assert.doesNotMatch(prose, /\b(?:\d+|two)\s+(?:test\s+)?scenarios?\b|scenarios?\s*:\s*\d+/i,
+      `Copied scenario count in ${name}`);
+    assert.doesNotMatch(prose, /node server\.mjs|localhost:4100|\bcopyFile\b|\bassert\.ok\b/i,
+      `Copied source details in ${name}`);
+  }
+});
+
+Then('the suite has one maintenance entry point without redundant nested guides', async function () {
+  const docs = await suiteDocuments(this);
+  assert.ok(docs.some(([name, text]) => name === 'tests/README.md' && text.trim()),
+    'Missing suite maintenance entry point');
+  // This fixture has no separate nested maintainer audience.
+  assert.deepEqual(docs.filter(([name]) => /(?:^|\/)README\.md$/i.test(name)).map(([name]) => name),
+    ['tests/README.md'], 'Redundant suite entry points');
 });

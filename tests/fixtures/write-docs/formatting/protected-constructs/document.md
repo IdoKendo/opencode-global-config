@@ -12,9 +12,9 @@ The worker retries failed requests up to 3 times, but only when the request incl
 +----------------------+                          +----------------------+                          +----------------------+
 ```
 
-```python
-message = "Preserve these spaces:    request accepted    retry scheduled    final outcome recorded    acknowledgement sent"
-print(message)
+```javascript
+const message = "Preserve these spaces:    request accepted    retry scheduled    final outcome recorded    acknowledgement sent";
+console.log(message);
 ```
 
 [Retry reference](https://example.com/documentation/workers/retries/idempotency-and-request-processing/reference?section=preserving-original-request-keys)

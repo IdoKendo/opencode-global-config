@@ -7,7 +7,7 @@ Feature: Documentation grounded in code and verified examples
     And a clean Git working tree and index
 
   Scenario: Document behavior and an edge case using project conventions
-    Given a project with a runnable "python worker.py --attempts N" command
+    Given a project with a runnable "node worker.mjs --attempts N" command
     And the command accepts positive integers and rejects 0 with "attempts must be positive"
     And existing guides use sentence-case headings and sections named "Usage" and "Examples"
     When the user asks the agent to document the attempts option with examples for 3 and 0
@@ -28,11 +28,11 @@ Feature: Documentation grounded in code and verified examples
     And the handoff identifies the removed installer command in "docs/install.md" as drift
 
   Scenario: Correct a broken example using execution evidence
-    Given "docs/usage.md" recommends "python worker.py --retry 3"
+    Given "docs/usage.md" recommends "node worker.mjs --retry 3"
     And that command exits with an unknown-option error
-    And the implementation accepts "python worker.py --attempts 3"
+    And the implementation accepts "node worker.mjs --attempts 3"
     When the user asks the agent to verify and fix the usage guide
-    Then the guide recommends "python worker.py --attempts 3"
+    Then the guide recommends "node worker.mjs --attempts 3"
     And the agent executes the corrected command successfully
     And the handoff identifies the corrected option and the successful verification
 

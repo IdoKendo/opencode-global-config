@@ -17,10 +17,16 @@ Make complex systems feel obvious to the next reader.
 - Inspect linked guides and adjacent documentation for the component you change.
   Report unrelated drift in the final handoff, with the file path and incorrect claim or command.
   Keep this inspection within the affected component; do not expand the task to fix unrelated drift.
-- Match the project's conventions and tone. Reuse section names, heading capitalization, and
-  section order from comparable existing docs; check the finished document against that example.
+- Match the project's conventions and tone. Start new documentation from the section outline of a
+  comparable guide. Keep applicable section names, heading capitalization, and section order.
 - Keep the structure clear: start high-level, then move toward details.
 - Use concrete examples from the codebase, including edge cases when they matter.
+
+## Documentation structure
+- Keep maintainer entry-point READMEs concise. Link to authoritative features, code, configuration,
+  and commands instead of copying inventories, counts, or implementation details that can drift.
+- Use one maintainer entry point for a suite. Add a nested README only when it serves a distinct
+  reader need that the entry point and source files do not cover.
 
 ## Writing style
 - Always use ASD-STE100 Simplified Technical English (STE) for English prose you write or rewrite.
@@ -36,6 +42,8 @@ Make complex systems feel obvious to the next reader.
   Preserve technical meaning. Use the STE rules for technical names instead of changing identifiers.
 
 ## Verification
+- For new documentation, compare the finished headings with the outline before delivery.
+  Fix missing sections and unintended changes to their names, capitalization, or order.
 - Measure Markdown source line lengths with a command or script before delivering. Count indentation
   and list markers toward the 100-character limit; reflow overlong prose and check again. Preserve
   list nesting and exempt only constructs where wrapping would break formatting or meaning.
