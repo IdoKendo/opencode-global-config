@@ -56,11 +56,6 @@ jobs:
         with:
           node-version: "26"
 
-      - name: Setup Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-
       - name: Disable MCP servers in the CI checkout
         run: |
           node --input-type=module <<'JS'
