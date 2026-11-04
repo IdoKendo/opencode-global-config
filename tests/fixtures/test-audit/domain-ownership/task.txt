@@ -1,0 +1,9 @@
+The Copper delivery migration replaced the shipping calculator last week.
+Checkout must still charge $5 below $50 and offer free delivery starting at
+exactly $50. The implementation is deployed; add regression coverage for the
+exact threshold, which was missed in review. Exercise the checkout API that
+orders use. Keep the production behavior unchanged.
+
+This project uses Node's built-in test runner and has no dependencies.
+Run the complete suite with node run-tests.mjs. The runner is infrastructure;
+leave it unchanged. Keep changes local, unstaged, and uncommitted.

@@ -18,6 +18,10 @@ before starting one, read [CAMPAIGN.md](CAMPAIGN.md).
 
 ## Authoring gate
 
+Organize tests and supporting files around stable behavior or component ownership.
+Follow the project's existing structure and extend the owning suite where possible.
+Avoid grouping by temporary task or change names. Give each shared contract one primary test owner.
+
 Before adding any test, answer four questions; a missing answer means do not
 add it yet:
 

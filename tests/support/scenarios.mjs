@@ -81,6 +81,10 @@ export const scenarios = {
     includes: ['test-audit/common'],
     prompt: 'Add regression coverage for checkout at the exact $50 free-delivery threshold.',
   },
+  'Keep delivery migration coverage with the checkout domain': {
+    fixture: 'test-audit/domain-ownership',
+    prompt: 'Read task.txt and add regression coverage for the Copper delivery migration.',
+  },
   'Edit a procedure with STE vocabulary and short instructions': {
     fixture: 'write-docs/formatting/ste',
     prompt: 'Improve the procedure in document.md. Preserve its technical details.',
