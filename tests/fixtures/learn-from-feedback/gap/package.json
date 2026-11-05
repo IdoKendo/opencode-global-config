@@ -1,0 +1,5 @@
+{
+  "private": true,
+  "scripts": { "lint": "eslint src", "ci": "node --check src/worker.js" },
+  "devDependencies": { "eslint": "9.39.1" }
+}

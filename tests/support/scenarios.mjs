@@ -1,4 +1,21 @@
 export const scenarios = {
+  'Suggest an existing lint rule after one correction': {
+    fixture: 'learn-from-feedback/lint',
+    prompt: 'Feedback on your worker change: use the application logger, not console.log. '
+      + 'This is the first occurrence. Please respond after inspecting the local project. '
+      + 'Suggestions only; do not edit files or access external systems.',
+  },
+  'Repair the execution gap instead of duplicating a configured rule': {
+    fixture: 'learn-from-feedback/gap',
+    includes: ['learn-from-feedback/lint'],
+    prompt: 'Read review.md and inspect the project. What do you recommend in response? '
+      + 'Suggestions only; do not edit files or access external systems.',
+  },
+  'Put judgment feedback in the existing skill without adopting a disputed ban': {
+    fixture: 'learn-from-feedback/judgment',
+    prompt: 'Read review.md and the local investigation guidance. What do you recommend in response? '
+      + 'Suggestions only; do not edit files or access external systems.',
+  },
   'Migrate service timeouts with a reusable safe tool': {
     fixture: 'build-the-tool/migrate',
     includes: ['build-the-tool/common'],
