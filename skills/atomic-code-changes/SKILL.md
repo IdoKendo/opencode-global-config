@@ -7,85 +7,29 @@ description: >-
 
 # Atomic Code Changes
 
-## Scope
-
-- Keep each implementation step single-purpose, reviewable, verifiable, and independently
-  reversible.
-- Apply this workflow to fixes, features, refactors, migrations, tests, and docs tied to a code
-  change.
-- Use the smallest practical unit that still leaves the system coherent.
-- Stop at task boundaries; do not roll adjacent cleanups, formatting sweeps, or opportunistic
-  fixes into the same change.
-- If a requested change is naturally broad, decompose it into ordered atomic steps first.
-- Add dependencies, abstractions, scripts, configuration, or persistent files only when the outcome
-  requires them.
-
-## Atomic Change Definition
-
-An atomic change is:
-
-- **Single-purpose:** solves one problem or advances one explicit step.
-- **Coherent:** leaves the codebase in a working, understandable state.
-- **Verifiable:** has a clear command, inspection, or manual check.
-- **Reviewable:** the diff can be explained in one short sentence.
-- **Reversible:** can be backed out without removing unrelated work.
+Keep each step single-purpose, independently verifiable, reviewable, and reversible.
+Use the smallest step that leaves the system coherent, including related tests and docs.
 
 ## Workflow
 
-Before a refactor or migration, inspect the existing implementation or named reference. Identify
-affected capabilities, integrations, and operational effects, including logs and metrics. Use this
-inventory to choose behavior-preservation checks.
+Before a refactor or migration, inspect the existing implementation or named reference.
+Identify affected capabilities, integrations, and operational effects, including logs and metrics.
+Use this inventory to choose behavior-preservation checks.
 
-1. **Name the outcome.** Write the next change as one sentence: "Make X do Y."
-2. **Choose the verification.** Decide the smallest test, build, lint, or inspection that proves it.
-3. **Edit only for that outcome.** Touch the minimum files needed; defer nearby improvements.
-4. **Run the completion gate.** Start with the smallest relevant checks. Expand for the affected
-   scope and risk before starting another concern.
-5. **Reassess scope.** If the next edit has a different purpose, make it a separate step.
+1. Split broad work into ordered steps. State each outcome in one sentence.
+   Choose its verification.
+2. Edit only for that outcome. Defer adjacent fixes, refactors, and formatting.
+   Add dependencies, abstractions, infrastructure, or persistent files only when required.
+3. Run the step's checks before changing another concern. Start with focused checks, then expand for
+   the affected scope and risk. Use supported repository commands and applicable
+   verification skills.
+   Complete requested CI or runtime checks when accessible; a smoke test does not replace them.
+4. If the purpose changes, separate the next step. If the goal becomes unclear, stop and clarify it.
 
 ## Completion Gates
 
-Before moving on, confirm:
-
-- The change matches the named outcome.
-- Verification passed or the remaining gap is explicitly reported.
-- Use the repository's supported commands and available project verification skills. Run required CI
-  or runtime checks when access permits. A smoke test does not complete a larger validation request.
-- No unrelated formatting, cleanup, dependency, or behavior change slipped in.
-- Inspect the final diff for unnecessary complexity, duplication, and temporary artifacts. Remove
-  only artifacts you created. Keep requested evidence separate from functional changes and outside
-  the repository unless the user asks to include it.
-- Follow-up work is noted instead of half-implemented.
-
-## Scope Tripwires
-
-Split the work when you notice:
-
-- "While I'm here..." edits.
-- A bug fix turning into a refactor.
-- A refactor requiring behavior changes.
-- Tests requiring new infrastructure.
-- More than one subsystem, API, or user-visible behavior changing at once.
-
-## Anti-Patterns
-
-- Combining a feature, refactor, and formatting pass in one diff.
-- Fixing unrelated warnings because they are nearby.
-- Starting broad cleanup without a named verification path.
-- Keeping edits after the original goal becomes ambiguous.
-
-## Examples
-
-- **Atomic:** Rename one helper and update its direct callers, then run the affected tests.
-- **Not atomic:** Rename the helper, rewrite the module, update dependencies, and fix unrelated
-  lint errors.
-- **Atomic:** Add a failing regression test, then make the smallest behavior change that passes it.
-- **Not atomic:** Add the regression test while also redesigning the surrounding API.
-
-## Checklist
-
-- [ ] One sentence describes the change.
-- [ ] One verification method is identified.
-- [ ] The diff serves only that sentence.
-- [ ] Scope tripwires were split or documented.
-- [ ] The final handoff names what changed and what was verified.
+Before moving on, confirm that the diff serves only the stated outcome and verification passed.
+Report any verification gap explicitly.
+Inspect the diff for unnecessary complexity, duplication, and temporary artifacts.
+Remove only artifacts you created. Keep requested evidence outside the repository unless requested.
+Note follow-up work instead of partially implementing it.
