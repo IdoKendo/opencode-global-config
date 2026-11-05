@@ -94,7 +94,7 @@ jobs:
         env:
           AGENT_TEST_TMPDIR: ${{ runner.temp }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: npm run test:agents -- --format json:logs/agent-tests/report.json
+        run: npm run test:agents -- --parallel 39 --format json:logs/agent-tests/report.json
 
       - name: Publish evaluation status
         if: always()
