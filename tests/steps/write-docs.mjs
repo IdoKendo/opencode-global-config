@@ -305,10 +305,11 @@ Then('source references use file paths and line numbers that locate the document
   const behaviorFunctions = [...validatorFunctions, ...parserFunctions];
   const identifiers = nodes.filter((node) => ts.isIdentifier(node) && (node.text === 'attempts'
     || behaviorFunctions.some((fn) => within(node, fn.body))));
-  // The CLI catch block reports validation failures without naming the attempts variable.
-  const handlers = nodes.filter((node) => ts.isTryStatement(node) && node.catchClause
-    && parserCalls.some((call) => within(call, node.tryBlock))).map((node) => node.catchClause);
-  const handling = [...handlers, ...nodes.filter((node) => (ts.isCallExpression(node)
+  // The CLI try/catch reports validation failures without naming the attempts variable.
+  const guardedCalls = nodes.filter((node) => ts.isTryStatement(node) && node.catchClause
+    && parserCalls.some((call) => within(call, node.tryBlock)));
+  const handlers = guardedCalls.map((node) => node.catchClause);
+  const handling = [...guardedCalls, ...handlers, ...nodes.filter((node) => (ts.isCallExpression(node)
     || ts.isBinaryExpression(node)) && handlers.some((handler) => within(node, handler.block)))];
   let locatedValidation = false;
   for (const reference of references) {

@@ -222,6 +222,8 @@ test('source references must resolve to real validation, not nearby mentions', a
   ]) await invoke(step, world(input(reference, code)));
   await control(step, input('worker.mjs:9-10 and worker.mjs:21'), input('worker.mjs:21'),
     /References must locate validation/);
+  await control(step, input('worker.mjs:9-10 and worker.mjs:18'), input('worker.mjs:18'),
+    /References must locate validation/);
   for (const [reference, expected] of [
     ['worker.mjs:2', /References must locate validation/],
     ['worker.mjs:1', /Reference does not locate attempts behavior/],
@@ -233,6 +235,7 @@ test('source references must resolve to real validation, not nearby mentions', a
     ['worker.mjs:4', /Reference does not locate attempts behavior/],
     ['worker.mjs:17', /Reference does not locate attempts behavior/],
     ['worker.mjs:9-10 and worker.mjs:23', /Reference does not locate attempts behavior/],
+    ['worker.mjs:9-10 and worker.mjs:25', /Reference does not locate attempts behavior/],
     ['worker.mjs:9-10 and worker.mjs:27', /Reference does not locate attempts behavior/],
     ['worker.mjs:9-10 and worker.mjs:28', /Reference does not locate attempts behavior/],
     ['worker.mjs:9-10 and worker.mjs:30', /Reference does not locate attempts behavior/],
