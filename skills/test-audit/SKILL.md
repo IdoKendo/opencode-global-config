@@ -8,170 +8,102 @@ description: >-
 
 # Test Audit
 
-Three modes, one value bar. Authoring mode gates every new or changed test at
-write time. Audit mode runs focused sweeps of tests that re-assert source,
-duplicate stronger proof, couple behavior to implementation, or keep test-only
-production seams alive. Continue broad audits as separate coherent follow-up
-PRs; optimize for confidence, not deletion count. Campaign mode prunes one
-whole subsystem's test surface (every test file a plugin or core area owns);
-before starting one, read [CAMPAIGN.md](CAMPAIGN.md).
+Apply the authoring gate to new or changed tests. Use audits to remove low-value tests and
+test-only production seams. Before auditing a whole subsystem, read [CAMPAIGN.md](CAMPAIGN.md).
+Optimize for confidence, not deletion count.
 
 ## Authoring gate
 
-Organize tests and supporting files around stable behavior or component ownership.
-Follow the project's existing structure and extend the owning suite where possible.
-Avoid grouping by temporary task or change names. Give each shared contract one primary test owner.
+Organize tests and support files by stable behavior or component ownership, not temporary change
+names. Extend the owning suite and consolidate repeated setup or table cases.
 
-Before adding any test, answer four questions; a missing answer means do not
-add it yet:
+Before adding a test, identify:
 
-1. What observable behavior, invariant, or independent contract does it protect?
-2. What credible regression makes it fail?
-3. Why does existing coverage not already catch that failure? Each contract has
-   one primary test owner at the strongest boundary; another layer needs its
-   own distinct risk, such as a transport or lifecycle failure the owner cannot
-   reach. Prefer extending a table-driven case or shared fixture over a
-   near-duplicate test; consolidate duplicated setup in the same change.
-4. Does it need a production seam (export, flag, wrapper, injection hook) that no
-   production caller needs? If yes, move the test to the real boundary instead.
+1. The observable behavior, invariant, or independent contract it protects.
+2. A credible regression that makes it fail.
+3. The gap in existing coverage. Give each contract one primary owner at the strongest boundary.
+   Another layer needs a distinct risk the owner cannot exercise, such as transport or lifecycle.
+4. Any production export, flag, wrapper, or injection hook needed only by tests.
+   Test the real boundary instead of adding such a seam.
 
-Then check the test against every [junk pattern](#junk-patterns); a match fails
-the gate unless the [retention bar](#retention-bar) names the contract it
-independently guards. A test that would break under behavior-preserving
-refactoring is asserting implementation, not behavior; rewrite it at the
-owning boundary before landing it.
-
-Bug regression tests must fail on the pre-fix code for the intended reason and
-pass after the owner-boundary repair. A regression test that never demonstrably
-failed proves the mock, not the fix. One regression at the owner boundary
-covers the bug; do not replay the same scenario at every layer it crosses.
+Do not add the test without these answers. Reject [junk patterns](#junk-patterns) unless they meet
+the [retention bar](#retention-bar). Rewrite tests that fail after behavior-preserving refactors.
+For bug fixes, demonstrate the intended failure before the fix and success after the owner-boundary
+repair. Keep one regression at that boundary; do not repeat it through every layer.
 
 ## Junk patterns
 
-The shared checklist for both modes: the authoring gate rejects a new test that
-matches one, and audits hunt for existing tests that do.
-
-- assertion-free coverage probes;
-- self-comparisons and identity copiers;
-- copied fixtures, inventories, manifests, or export lists;
-- exact source, import, or string greps;
-- private predicate or call-shape tests duplicated at real boundaries;
-- duplicate invocations of the same contract;
-- provider-local replays of shared helpers;
-- tests whose only purpose is preserving test-only exports, globals, or wrappers;
-- dead production code whose only callers are tests;
-- expected values produced by the helper or renderer under test;
-- mocks that implement the asserted behavior, or one identical mock standing in
-  for different APIs;
-- fixtures that supply the receipt, admission, or callback ordering the owner
-  should produce, or persistence asserted against a store the path never writes;
-- capability tests that restate declared flags instead of exercising the
-  delivery or acknowledgement the flag promises;
-- negative controls that pass for an unrelated reason, such as a denial from a
-  different guard or a rejection the production path never reaches;
-- names or fixtures that promise more than the input exercises, such as a
-  "retires the window" test asserting the window was not cleared.
+- Assertion-free probes, self-comparisons, identity copies, and duplicate contract invocations.
+- Copied fixtures, inventories, manifests, export lists, or exact source/import/string checks.
+- Private predicate or call-shape checks already covered at real boundaries; provider-local
+  repetitions of shared helper tests.
+- Tests that preserve test-only exports, globals, wrappers, or otherwise unused production code.
+- Expected values produced by the tested helper or renderer; mocks that implement the asserted
+  behavior or use one identical mock for different APIs.
+- Fixtures that supply owner-produced receipts, admission, or callback ordering; persistence
+  assertions against a store the execution path never writes.
+- Capability checks that repeat flags instead of exercising promised delivery or acknowledgement.
+- Negative controls that pass through the wrong guard or an unreachable rejection.
+- Names or fixtures that promise behavior the inputs and assertions do not exercise.
 
 ## Value bar
 
-Tests justify their maintenance cost by protecting behavior, a credible
-regression, or an independently meaningful contract. In an audit, an existing
-test that must change for behavior-preserving source reorganization is suspect,
-not automatically deletable; the authoring gate still rejects new ones.
-
-Before judging a candidate, read the complete test and production owner, its
-entry point, callers, callees, sibling implementations, overlapping tests, CI
-routing, and relevant history. Read root and scoped `AGENTS.md` files first.
-When the test claims dependency-backed behavior, inspect the dependency source
-or types directly.
+Tests must protect behavior, a credible regression, or an independent contract.
+For existing tests, failure after source reorganization is evidence to investigate, not permission
+to delete. Before judging a candidate, read its complete test and production owner, entry point,
+callers, callees, sibling implementations, overlapping tests, CI routing, and relevant history.
+Inspect dependency source or types for dependency-backed claims.
 
 ## Discovery
 
-Keep discovery read-only and report evidence before editing. For broad scope,
-run parallel discovery lanes when available:
-
-- core code and shared packages;
-- plugins and integrations;
-- UI, apps, scripts, and tooling;
-- a cross-cutting pattern sweep.
-
-Outside campaign mode, prefer a few high-confidence candidates over a large
-speculative inventory. Hunt for the [junk patterns](#junk-patterns).
+Keep discovery read-only and report evidence before editing. For broad audits, use independent
+discovery lanes when available. Outside campaigns, select a few high-confidence candidates.
 
 ## Retention bar
 
-Keep a test when it independently enforces a public API, plugin SDK, protocol,
-config, migration, storage, security, platform, default, prompt-byte, generated
-cross-language, package, release, or architecture contract. Also keep:
+Keep independent public API, plugin SDK, protocol, config, migration, storage, security, platform,
+default, prompt-byte, generated cross-language, package, release, and architecture contracts.
+Keep observable call ordering and credible regressions.
 
-- call ordering when order is observable behavior;
-- regressions with a credible failure mode;
-- source inspection when it is the cheapest independent guard: it fails when
-  the contract changes (the user-facing key, byte, or path) and survives an
-  identifier-only refactor;
-- a retained test that fails on the baseline: treat it as a possible product
-  bug, reproduce it, and repair the owner rather than deleting it.
-
-Static or slow is not a deletion reason. A test that resembles implementation
-may still be the independent contract; prove otherwise before removing it.
+Source inspection can be the cheapest independent guard: it must detect contract changes to
+user-facing keys, bytes, or paths and survive identifier-only refactors.
+Static or slow tests are not automatically disposable. Prove that apparent implementation checks
+lack independent value before removing them. Reproduce retained baseline failures as possible
+product bugs and repair the owner instead of deleting coverage.
 
 ## Candidate evidence
 
-Record every field below before editing. A missing field means the candidate is
-not ready for deletion:
-
-- exact test name and location;
-- what failure it can actually detect;
-- non-test callers of the covered production or support seam;
-- stronger remaining owner-boundary proof, or why no proof is needed;
-- relevant history and the reason the test or seam exists;
-- production or test-support deletion unlocked;
-- risk and the focused validation command.
+Before editing, record each candidate's exact name and location, detectable failure, non-test
+callers, and stronger remaining owner-boundary proof (or why none is needed).
+Include history, purpose, unlocked production/support deletions, risk, and validation command.
+A missing field blocks deletion.
 
 ## Edit shape
 
-Choose one coherent owner-boundary batch. Delete obsolete test-only exports,
-globals, wrappers, and dead production paths instead of preserving aliases.
-Move retained regressions to their canonical owners. Consolidate repeated
-package or dependency assertions into one generic contract.
-
-Prefer net-negative production LOC. Do not add replacement tests that restate
-the same implementation, and do not convert uncertain candidates into cleanup
-to increase deletion counts.
+Choose one coherent owner-boundary batch. Remove obsolete test-only seams and dead production paths
+without compatibility aliases. Move retained regressions to their canonical owners.
+Consolidate repeated package or dependency assertions into one generic contract.
+Prefer fewer production lines. Do not replace deleted tests with equivalent implementation checks
+or treat uncertain candidates as cleanup.
 
 ## Validation
 
-Never edit source or tests while a test run is active in the same checkout.
-Follow the repository's testing instructions and use its supported environment
-for resource-intensive or integration tests.
+Do not edit source or tests during an active run in the same checkout.
+Use the repository's runner, supported environment, and path or name filters.
 
-1. Run the smallest owner and sibling tests with the repository's test runner
-   and supported path or test-name filters.
-2. For removed source greps or plan assertions, run the executable script or
-   dry-run that owns the real contract.
-3. Run targeted formatting, then `git diff --check`.
-4. Identify and run the checks required for the changed files by repository
-   policy and CI configuration.
-5. Inspect `git diff --numstat`; report production/tooling separately from
-   tests and test support.
-6. After final audit edits, review the diff for lost coverage and unintended
-   behavior changes. Use the repository's review tooling when available.
+1. Run the smallest owner and sibling suites.
+2. For removed source or plan assertions, run the script or dry-run that owns the contract.
+3. Run targeted formatting, `git diff --check`, and checks required by repository policy and CI.
+4. Review the final diff for lost coverage and behavior changes, using repository review tools when
+   available. Inspect `git diff --numstat`; count production/tooling separately from tests/support.
 
 ## Landing and continuation
 
-Commit, push, open a PR, or merge only when authorized. Follow the repository's
-contribution and review process. Merge one coherent PR at a time; after
-merging, refresh from the current target branch and rerun read-only discovery
-for the next high-confidence batch.
+Continue broad audits as coherent follow-up changes. After each authorized merge, refresh from the
+target branch and repeat read-only discovery.
 
 ## Handoff
 
-Report:
-
-- root cause and removed low-value categories;
-- production owner simplifications;
-- retained false positives and why they remain valuable;
-- focused and full proof actually run;
-- production versus test LOC;
-- PR and merge state;
-- named follow-ups.
+Report root causes, removed categories, production simplifications, and retained false positives
+with reasons. Include checks actually run, production versus test LOC, change/merge state, and
+named follow-ups.
