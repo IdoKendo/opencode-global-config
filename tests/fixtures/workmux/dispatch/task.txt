@@ -1,0 +1,12 @@
+Plan a workmux worker for billing. We are currently in /srv/catalog, but the task belongs to
+/srv/billing. Its base is release/2026. Create branch fix/retries with worktree handle retry-worker.
+I want a WINDOW called retry-review in tmux session ops; ops does not exist yet and TMUX_PANE is unset.
+Keep my current uncommitted catalog edits where they are. Start in the background.
+
+Supplied project .workmux.yaml: mode: session; post_create: ["npm ci"]; files.copy: [".env"];
+panes: [{command: "<agent>"}]. Global config snapshot: agent: opencode.
+Fix only duplicate retry attempts in src/retry.mjs. Use node --test tests/retry.test.mjs to verify.
+Stop after reporting the diff and test evidence. No commits, pushes, or external service changes.
+Propose an absolute path for the worker prompt, but include its contents in the response, not a file.
+
+Return {"create": command, "promptPath": string, "handoff": string, "preflight": string[]}.

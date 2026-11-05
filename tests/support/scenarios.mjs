@@ -1,4 +1,29 @@
 export const scenarios = {
+  'Plan workmux dispatch into the requested repository and terminal': {
+    fixture: 'workmux/dispatch',
+    includes: ['workmux/common'],
+    prompt: 'Read task.txt and response-format.txt. Give the requested workmux plan without executing it.',
+  },
+  'Provision headless work without starting an agent': {
+    fixture: 'workmux/headless',
+    includes: ['workmux/common'],
+    prompt: 'Read task.txt and response-format.txt. Give the requested workmux plan without executing it.',
+  },
+  'Monitor ambiguous handles without treating done as verified': {
+    fixture: 'workmux/monitor',
+    includes: ['workmux/common'],
+    prompt: 'Read task.txt and response-format.txt. Give the requested workmux plan without executing it.',
+  },
+  'Match workmux lifecycle commands to the requested retained resources': {
+    fixture: 'workmux/lifecycle',
+    includes: ['workmux/common'],
+    prompt: 'Read task.txt and response-format.txt. Give the requested workmux plan without executing it.',
+  },
+  'Preserve dirty work when only creation was authorized': {
+    fixture: 'workmux/authorization',
+    includes: ['workmux/common'],
+    prompt: 'Read task.txt and response-format.txt. Give the requested workmux plan without executing it.',
+  },
   'Separate ordinary feedback from tests and inherited prompts': {
     fixture: 'review-agent-history/mixed',
     includes: ['review-agent-history/common'],

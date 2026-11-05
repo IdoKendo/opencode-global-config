@@ -1,0 +1,11 @@
+Plan monitoring of billing:retry from /srv/catalog. Both billing and catalog have a retry handle.
+At the waiting stage, billing's captured output says it needs the fixture path. The path is
+tests/fixtures/retry.json; tell it that and ask it to run node --test tests/retry.test.mjs.
+Show a status query, an output capture, a follow-up message, and a bounded wait for billing.
+
+In a later snapshot its status is done, but its reported command exits 1: the duplicate-attempt test
+still fails. The diff is not reviewed. Can we call this verified? Explain the difference between
+waiting for agent completion and workmux add --wait. Do not run any commands.
+
+Return {"commands": command[], "verified": boolean, "assessment": string,
+ "waitMeaning": string, "addWaitMeaning": string}.

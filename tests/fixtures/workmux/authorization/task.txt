@@ -1,0 +1,7 @@
+Can we retire billing:retry? I previously authorized only creating its worktree and starting a worker.
+The worker is done. Its worktree /srv/billing__worktrees/retry has uncommitted changes to src/retry.mjs
+and an untracked customer-note.txt. The branch has not been reviewed or merged. I have not approved
+commits, merges, pushes, or discarding edits. Explain what is needed before retirement.
+No companion slash-command skills are installed. This is a plan, not permission to change anything.
+
+Return {"ready": boolean, "commandsNow": command[], "needed": string, "preserved": string[]}.

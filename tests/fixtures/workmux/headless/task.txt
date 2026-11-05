@@ -1,0 +1,12 @@
+Plan local worktree provisioning for /srv/billing on local branch audit, based on release/2026.
+I want a machine-readable receipt and no agent or terminal yet. Hooks run npm ci and configured
+file operations copy .env. Explain their effect; I have authorized normal provisioning.
+
+For the subsequent lifecycle, assume provisioning returned this receipt:
+{"handle":"audit-42","branch":"audit","worktree_path":"/srv/billing__worktrees/audit-42",
+ "working_directory":"/srv/billing__worktrees/audit-42/service"}
+I may attach a terminal later and, after finishing, remove the environment without retaining a branch.
+Show those as separate future actions, not as part of creation. Where should task commands run?
+
+Return {"create": command, "attachLater": command, "removeLater": command,
+ "workingDirectory": string, "effects": string}.

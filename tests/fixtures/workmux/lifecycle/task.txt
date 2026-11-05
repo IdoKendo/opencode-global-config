@@ -1,0 +1,18 @@
+Plan these independent authorized operations from /srv/billing. Each handle matches the case ID.
+The owners have authorized the operation stated in each row, provided it loses no uncommitted work.
+No current Git-status snapshot is available.
+Project configuration: merge_strategy: squash; merge_keep: true;
+pre_merge: ["npm test"]; pre_remove: ["./archive-evidence.sh"].
+Test evidence is currently inside each worktree. Include preparation and post-operation checks.
+
+case ID       Owner's requested outcome
+close-only    Close the terminal, retaining the worktree and branch.
+reopen        Open a terminal for this existing worktree.
+merge-keep    Merge into release/2026 and retain terminal, worktree, and branch.
+merge-clean   Merge into release/2026 and remove terminal, worktree, and branch.
+remove-all    Remove terminal, worktree, and branch without merging.
+keep-branch   Remove terminal and worktree, but retain the local branch without merging.
+
+Return {"cases": [{"id": string, "operation": command,
+ "retained": {"terminal": boolean, "worktree": boolean, "branch": boolean}}],
+ "before": command[], "after": command[], "preparation": string}.

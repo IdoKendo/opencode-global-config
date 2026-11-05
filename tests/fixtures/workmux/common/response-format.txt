@@ -1,0 +1,8 @@
+This is a planning exercise. The paths and environment snapshots in task.txt are illustrative.
+Read only supplied fixture files and relevant skills. Do not access real repositories, agent
+sessions, external services, or CLI state. Do not run workmux, tmux, git mutations, or any proposed
+command. Do not write files. Return one JSON object, optionally fenced as JSON, for our review UI.
+
+Represent each proposed command as {"cwd": "absolute directory", "argv": ["executable", "argument", ...]}.
+Use separate argv entries rather than shell expressions. Preserve the case IDs requested in task.txt.
+Use human-readable text for explanations. A proposed command is not a claim that it was executed.
