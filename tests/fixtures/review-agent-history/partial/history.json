@@ -1,0 +1,7 @@
+{
+  "source": "OpenCode export",
+  "coverage": {"requested": "2026-10-01/2026-10-31 UTC", "available": "2026-10-13/2026-10-20 UTC", "paginationExhausted": false, "nextCursor": "page-2", "archivedChecked": false, "errors": ["page-2 retrieval failed"], "unavailableSources": ["OtherChat: access denied"]},
+  "messages": [
+    {"id": "s9/m1", "date": "2026-10-15", "role": "user", "topic": "doc-inventory", "text": "Keep the maintainer README concise and link to source inventories."}
+  ]
+}

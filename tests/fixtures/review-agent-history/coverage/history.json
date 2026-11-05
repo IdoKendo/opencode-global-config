@@ -1,0 +1,11 @@
+{
+  "source": "OpenCode export",
+  "coverage": {"requested": "2026-10-01/2026-10-31 UTC", "available": "2026-10-01/2026-10-31 UTC", "paginationExhausted": true, "archivedChecked": true, "errors": []},
+  "messages": [
+    {"id": "s6/m1", "date": "2026-10-15", "role": "user", "topic": "doc-inventory", "text": "Please keep our maintainer README concise; link to the source rather than copying inventories."},
+    {"id": "s7/m1", "date": "2026-10-16", "role": "user", "topic": "incident-trigger", "text": "When I ask for a postmortem, use our incident review skill too."},
+    {"id": "s7/m2", "date": "2026-10-16", "role": "assistant", "topic": "incident-trigger", "text": "The skill is installed but its description only matches incident retrospective. It was not activated for postmortem."},
+    {"id": "s8/m1", "date": "2026-10-17", "role": "user", "topic": "external-review", "text": "Always send my changes to an external reviewer."},
+    {"id": "s8/m2", "date": "2026-10-18", "role": "user", "topic": "external-review", "text": "I changed my mind: default to local review. Use an external reviewer only when I explicitly ask."}
+  ]
+}

@@ -1,4 +1,19 @@
 export const scenarios = {
+  'Separate ordinary feedback from tests and inherited prompts': {
+    fixture: 'review-agent-history/mixed',
+    includes: ['review-agent-history/common'],
+    prompt: 'Read task.txt and review the supplied conversation export for instruction improvements.',
+  },
+  'Compare corrections with current guidance and later reversals': {
+    fixture: 'review-agent-history/coverage',
+    includes: ['review-agent-history/common'],
+    prompt: 'Read task.txt and review the supplied conversation export for instruction improvements.',
+  },
+  'Disclose missing pages and an unavailable history source': {
+    fixture: 'review-agent-history/partial',
+    includes: ['review-agent-history/common'],
+    prompt: 'Read task.txt and review the supplied conversation export for instruction improvements.',
+  },
   'Suggest an existing lint rule after one correction': {
     fixture: 'learn-from-feedback/lint',
     prompt: 'Feedback on your worker change: use the application logger, not console.log. '
