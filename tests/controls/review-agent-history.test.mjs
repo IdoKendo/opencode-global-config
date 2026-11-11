@@ -48,6 +48,13 @@ test('coverage checks reject duplicate rules, wrong destinations, and superseded
   const capitalized = structuredClone(covered);
   capitalized.findings[0].currentCoverage = 'guidance/current.md, Documentation skill';
   checkCoverage(capitalized);
+  const described = structuredClone(covered);
+  described.findings[0].currentCoverage = 'guidance/current.md:6–9 already requires concise '
+    + 'maintainer entry points and links to authoritative sources instead of copied inventories.';
+  checkCoverage(described);
+  rejectsMutation(checkCoverage, described, (v) => {
+    v.findings[0].currentCoverage = 'guidance/current.md covers incident reviews.';
+  });
   rejectsMutation(checkCoverage, covered, (v) => { v.findings[0].category = 'new-skill'; });
   rejectsMutation(checkCoverage, covered, (v) => { v.findings[1].category = 'new-skill'; });
   rejectsMutation(checkCoverage, covered, (v) => { v.findings[1].target = 'AGENTS.md'; });

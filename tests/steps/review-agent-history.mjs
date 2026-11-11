@@ -28,7 +28,8 @@ export function checkMixed(value) {
 export function checkCoverage(value) {
   const byTopic = Object.fromEntries(value.findings.map((item) => [item.topic, item]));
   assert.equal(byTopic['doc-inventory']?.category, 'covered');
-  assert.match(byTopic['doc-inventory'].currentCoverage, /documentation/i);
+  assert.match(byTopic['doc-inventory'].currentCoverage,
+    /documentation|maintainer entry points?[\s\S]*links? to authoritative sources/i);
   assert.equal(byTopic['incident-trigger']?.category, 'discovery');
   assert.match(byTopic['incident-trigger'].proposal, /postmortem/i);
   assert.match(byTopic['incident-trigger'].target, /incident-review/);
