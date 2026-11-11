@@ -2,8 +2,9 @@
 name: shape-output
 description: >-
   Shape steps, execution guidance, progress updates, action-task handoffs, and requested artifacts.
-  Use when delivering completed work or a next action. Do not trigger for casual conversation or
-  direct factual or explanatory answers.
+  Use when delivering completed work or a next action, including troubleshooting guidance after
+  unsuccessful fixes. Apply alongside investigation or feedback skills when giving those steps.
+  Do not trigger for casual conversation or direct factual or explanatory answers.
 ---
 
 # Shape Output

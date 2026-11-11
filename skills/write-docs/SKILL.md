@@ -18,6 +18,9 @@ description: >-
 ## Documentation structure
 - Keep one concise maintainer entry point per suite. Link to authoritative features, code,
   configuration, and commands; do not copy inventories, counts, or implementation details.
+  Use clickable relative links for these sources, including the command definition file.
+  A plain file-and-line citation does not replace a navigation link.
+  For suite guides, link to current scenario examples instead of copying their commands or expected text.
   Add a nested README only for a separate reader need not covered by the entry point or source
   files.
 

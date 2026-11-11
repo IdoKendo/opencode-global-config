@@ -21,6 +21,7 @@ require a script.
   When delegation is useful, give all delegates one shared skill with the procedure, verification
   requirements, and scope boundaries. Keep that skill outside their write scope.
 - In the handoff, give the rerunnable command, input paths, and actual results.
+  Use an actual verified input path in the command, not a placeholder such as `<input>`.
   Report valid, invalid, and incomplete evidence results separately.
   State what still needs human judgment or production verification.
 - Keep disposable artifacts outside the repository.
