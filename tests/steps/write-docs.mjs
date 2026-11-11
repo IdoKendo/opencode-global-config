@@ -381,7 +381,7 @@ Then('the handoff identifies the corrected option and the successful verificatio
   assert.match(this.handoff, /verif|test|ran|execut|check/i);
   const claims = this.handoff.split(/[.!?\n]/)
     .filter((claim) => !/\b(?:not|never|failed|unable|couldn't|unverified)\b/i.test(claim)).join('\n');
-  assert.match(claims, /success|pass|Retry attempts: 3|exit(?:ed)?\s+(?:code\s+)?0|works|confirmed|\bverified\b[^\n]*(?:examples?|commands?)/i);
+  assert.match(claims, /success|pass|Retry attempts: 3|exit(?:ed)?\s+(?:code\s+)?0|works|confirmed|\bverified\b[^\n]*(?:examples?|commands?|CLI cases?)/i);
 });
 
 Given('a deployment guide containing the command {string}', async function (command) {

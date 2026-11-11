@@ -303,6 +303,9 @@ test('corrected examples and verification claims cannot substitute for runtime r
   await control('the handoff identifies the corrected option and the successful verification',
     { handoff: 'Replaced --retry with --attempts. Verified both examples and invalid-input behavior.' },
     { handoff: 'Replaced --retry with --attempts. Examples were not verified.' }, 'match');
+  await control('the handoff identifies the corrected option and the successful verification',
+    { handoff: 'Replaced --retry with --attempts. Verified eight CLI cases.' },
+    { handoff: 'Replaced --retry with --attempts. Could not verify eight CLI cases.' }, 'match');
   await control('the guide recommends "node worker.mjs --attempts 3"', good,
     { ...good, docs: { 'docs/usage.md': 'node worker.mjs --attempts 3' } }, '==');
   await control('the guide recommends "node worker.mjs --attempts 3"',
