@@ -33,10 +33,24 @@ test('dispatch rejects wrong repository, placement, mode, relative prompt, and m
   const longFlags = structuredClone(dispatch);
   longFlags.create.argv = longFlags.create.argv.map((v) => ({ '-b': '--background', '-P': '--prompt-file' })[v] ?? v);
   checkDispatch(longFlags);
+  checkDispatch({ ...dispatch,
+    preflight: ['Creation runs the configured npm dependency installation hook, copies .env, and starts opencode.'],
+  });
+  checkDispatch({ ...dispatch,
+    preflight: ['Creation runs the npm installation hook, copies .env, and starts opencode.'],
+  });
+  checkDispatch({ ...dispatch,
+    preflight: ['Creation runs the configured npm dependency-install hook, copies .env, and starts opencode.'],
+  });
+  for (const effect of ['npm test', 'copies .env and starts opencode']) {
+    reject(checkDispatch, dispatch, (v) => { v.preflight = [effect]; });
+  }
 });
 test('handoffs reject lost scope, verification, stopping point, and permissions', () => {
   checkHandoff({ ...dispatch, handoff: dispatch.handoff.replace('node --test tests/retry.test.mjs',
     '{"argv":["node","--test","tests/retry.test.mjs"]}') });
+  checkHandoff({ ...dispatch, handoff: dispatch.handoff.replace('node --test', 'Node with arguments --test and') });
+  reject(checkHandoff, dispatch, (v) => { v.handoff = v.handoff.replace('--test', '--check'); });
   for (const text of ['src/retry.mjs', 'node --test tests/retry.test.mjs', 'Stop',
     'No commits or pushes.', 'No external changes.']) {
     reject(checkHandoff, dispatch, (v) => { v.handoff = v.handoff.replace(text, ''); });

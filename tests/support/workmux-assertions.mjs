@@ -28,14 +28,14 @@ export function checkDispatch(plan) {
   assert.equal(flag(args, '-P', '--prompt-file'), plan.promptPath);
   assert.ok(!has(args, '-w', '--with-changes', '--headless', '-s', '--session'));
   const preflight = plan.preflight.join(' ');
-  assert.match(preflight, /npm ci/);
+  assert.match(preflight, /npm ci|runs (?:the )?(?:configured )?npm (?:dependency[ -])?install(?:ation)? hook/i);
   assert.match(preflight, /\.env/);
   assert.match(preflight, /opencode|agent|pane/i);
 }
 
 export function checkHandoff(plan) {
   for (const pattern of [/src\/retry\.mjs/, /duplicate/i,
-    /node[\s\S]*--test[\s\S]*tests\/retry\.test\.mjs/, /diff/i, /stop/i]) {
+    /[Nn]ode[\s\S]*--test[\s\S]*tests\/retry\.test\.mjs/, /diff/i, /stop/i]) {
     assert.match(plan.handoff, pattern);
   }
   assert.match(plan.handoff, /(?:no|not|never|without)[^.\n]*(?:commit|push)/i);
