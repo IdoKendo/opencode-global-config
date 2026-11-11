@@ -1,4 +1,16 @@
 export const scenarios = {
+  'Describe faster evaluation rather than a worker count': {
+    fixture: 'write-commit-message/parallel',
+    prompt: 'Read change.md and suggest a commit message. Return only one subject line.',
+  },
+  'Keep local speed measurements out of unverified CI claims': {
+    fixture: 'write-commit-message/local',
+    prompt: 'Read change.md and write a commit message. Return only one subject line; include a speedup number only if it is supported for the environment claimed.',
+  },
+  'Report measured CI improvement in the requested message': {
+    fixture: 'write-commit-message/verified',
+    prompt: 'Read change.md and write a commit message. Return only one subject line and include the measured evaluation-step improvement, using before/after times or a speedup factor.',
+  },
   'Plan workmux dispatch into the requested repository and terminal': {
     fixture: 'workmux/dispatch',
     includes: ['workmux/common'],
