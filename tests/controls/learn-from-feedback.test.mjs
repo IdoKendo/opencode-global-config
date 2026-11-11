@@ -59,6 +59,26 @@ test('harm-based rejection preserves the valid exception without endorsing the c
   }
 });
 
+test('existing console rule can be identified by its configuration and behavior', async () => {
+  const step = cases[1][0];
+  const handoff = 'eslint.config.mjs:1 already disallows console calls. '
+    + 'The CI script uses node --check only. Add npm run lint.';
+  await invoke(step, { handoff });
+  await invoke(step, { handoff: handoff.replace('disallows', 'prohibits') });
+  await invoke(step, { handoff: 'The existing no-console rule covers the worker. '
+    + 'The CI script uses node --check only. Add npm run lint.' });
+  const bypass = 'CI bypasses linting. The no-console rule already covers the worker. '
+    + 'It uses node --check only. Update ci to npm run lint && node --check src/worker.js.';
+  await invoke(step, { handoff: bypass });
+  await assert.rejects(() => invoke(step, { handoff: bypass.replace('CI bypasses linting.', '') }),
+    /Missing CI execution gap/);
+  for (const replacement of ['allows console calls', 'disallows debugger statements']) {
+    await assert.rejects(() => invoke(step, {
+      handoff: handoff.replace('disallows console calls', replacement),
+    }), /Missing existing rule/);
+  }
+});
+
 test('a single correction cannot be deferred until it repeats', async () => {
   await assert.rejects(() => invoke(cases[0][0], {
     handoff: cases[0][1] + ' Wait for a second occurrence.',

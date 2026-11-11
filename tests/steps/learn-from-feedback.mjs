@@ -22,10 +22,12 @@ Then('the feedback recommendation enables the existing console rule', function (
 
 Then('the feedback recommendation repairs the missing lint invocation', function () {
   const text = plain(this.handoff);
-  assert.match(text, /no-console/, 'Missing existing rule');
-  assert.match(text, /(?:already|enabled|configured)/i, 'Missing current coverage');
+  assert.match(text, /no-console|eslint\.config\.mjs[^.\n]*(?:disallows|forbids|bans|prohibits) console calls/i,
+    'Missing existing rule');
+  assert.match(text, /(?:already|enabled|configured|existing)/i, 'Missing current coverage');
   assert.match(text, /npm run lint/, 'Missing lint invocation recommendation');
-  assert.match(text, /(?:npm run ci|["']?ci["']?\s*:|CI script)/i, 'Missing CI execution gap');
+  assert.match(text, /(?:npm run ci|["']?ci["']?\s*:|CI script|CI bypasses lint(?:ing)?)/i,
+    'Missing CI execution gap');
   assert.match(text, /node --check|syntax.only|syntax check/i, 'Missing reason CI missed the error');
 });
 
