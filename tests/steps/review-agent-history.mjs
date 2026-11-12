@@ -1,6 +1,31 @@
 import assert from 'node:assert/strict';
 import { Given, Then } from '@cucumber/cucumber';
+import { readFileSync } from 'node:fs';
 import { files } from '../support/harness.mjs';
+
+function requirements(finding, scenario, message, clauses) {
+  const history = JSON.parse(readFileSync(new URL(
+    `../fixtures/review-agent-history/${scenario}/history.json`, import.meta.url), 'utf8'));
+  const source = history.messages.find((item) => item.id === message);
+  const quotes = (finding.proposalRequirements ?? []).filter((item) => item.message === message);
+  for (const item of quotes) {
+    assert.ok(item.quote && source.text.includes(item.quote), 'Requirement must quote its source');
+  }
+  for (const clause of clauses) {
+    assert.ok(quotes.some((item) => item.quote.includes(clause)), `Missing source requirement: ${clause}`);
+  }
+}
+
+function guidance(finding, path) {
+  const inventory = readFileSync(new URL(
+    '../fixtures/review-agent-history/common/guidance/current.md', import.meta.url), 'utf8');
+  const section = inventory.split(/^## /m).find((entry) => entry.includes(`Path: ${path}\n`));
+  const heading = section?.split('\n')[0];
+  assert.ok(finding.guidanceReferences?.some((item) => item.section?.trim()
+    && (item.path === path || (item.path === 'guidance/current.md' && heading
+      && item.section.includes(heading)))),
+    `Missing guidance reference: ${path}`);
+}
 
 export function report(text) {
   return JSON.parse(text.trim().replace(/^```(?:json)?\s*\n([\s\S]*?)\n```$/, '$1'));
@@ -18,8 +43,9 @@ export function checkMixed(value) {
   for (const field of ['quote', 'currentCoverage', 'target', 'proposal', 'benefit', 'confidence']) {
     assert.ok(finding[field]?.trim(), `Missing ${field}`);
   }
-  assert.match(finding.proposal, /median/i);
-  assert.match(finding.proposal, /p95/i);
+  requirements(finding, 'mixed', 's1/m1', [
+    'compare successful deployments', 'exclude manual approval waits', 'report median and p95 duration',
+  ]);
   for (const id of ['s3/m1', 's4/m1', 's5/m1']) {
     assert.ok(value.excluded.some((item) => item.message === id && item.reason), `Missing exclusion ${id}`);
   }
@@ -28,27 +54,34 @@ export function checkMixed(value) {
 export function checkCoverage(value) {
   const byTopic = Object.fromEntries(value.findings.map((item) => [item.topic, item]));
   assert.equal(byTopic['doc-inventory']?.category, 'covered');
-  assert.match(byTopic['doc-inventory'].currentCoverage,
-    /documentation|maintainer entry points?[\s\S]*links? to authoritative sources/i);
+  guidance(byTopic['doc-inventory'], 'skills/documentation/SKILL.md');
   assert.equal(byTopic['incident-trigger']?.category, 'discovery');
-  assert.match(byTopic['incident-trigger'].proposal, /postmortem/i);
-  assert.match(byTopic['incident-trigger'].target, /incident-review/);
+  guidance(byTopic['incident-trigger'], 'skills/incident-review/SKILL.md');
+  requirements(byTopic['incident-trigger'], 'coverage', 's7/m1', [
+    'When I ask for a postmortem, use our incident review skill too',
+  ]);
+  assert.ok(byTopic['incident-trigger'].proposal?.trim(), 'Missing discovery proposal');
+  assert.equal(byTopic['incident-trigger'].target, 'skills/incident-review/SKILL.md');
+  assert.equal(byTopic['incident-trigger'].targetSection.toLowerCase(), 'description');
   assert.equal(byTopic['external-review']?.category, 'covered');
+  guidance(byTopic['external-review'], 'skills/review-workflow/SKILL.md');
   assert.ok(byTopic['external-review'].evidence.includes('s8/m2'), 'Missing preference reversal');
+  assert.deepEqual(byTopic['external-review'].supersededEvidence, ['s8/m1']);
   assert.deepEqual(value.findings.filter((item) => !['covered', 'insufficient'].includes(item.category))
     .map((item) => item.topic), ['incident-trigger']);
 }
 
 export function checkPartial(value) {
   assert.equal(value.coverage.status, 'partial');
-  const limits = value.coverage.limitations.join(' ');
-  assert.match(limits, /page-2/);
-  assert.match(limits, /OtherChat/);
-  const isoDates = /2026-10-13/.test(limits) && /2026-10-20/.test(limits);
-  const namedDates = /\bOctober\s+13\s*(?:–|—|-|through|to)\s*(?:October\s+)?20\b/i.test(limits)
-    && /\b2026\b/.test(limits);
-  assert.ok(isoDates || namedDates, 'Missing available October 13–20, 2026 interval');
-  assert.match(limits, /archiv/i);
+  assert.ok(value.coverage.limitations?.some((item) => item.trim()), 'Missing coverage explanation');
+  assert.deepEqual(value.coverage.requested,
+    { start: '2026-10-01', end: '2026-10-31', timezone: 'UTC' });
+  assert.deepEqual(value.coverage.available,
+    { start: '2026-10-13', end: '2026-10-20', timezone: 'UTC' });
+  assert.equal(value.coverage.paginationExhausted, false);
+  assert.deepEqual(value.coverage.pendingCursors, ['page-2']);
+  assert.deepEqual(value.coverage.unavailableSources, ['OtherChat']);
+  assert.equal(value.coverage.archivedChecked, false);
   assert.ok(value.findings.length > 0, 'Available evidence must still be reviewed');
   for (const finding of value.findings) {
     assert.equal(finding.topic, 'doc-inventory');

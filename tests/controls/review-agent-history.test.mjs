@@ -17,18 +17,27 @@ const release = {
   interpretation: 'explicit', quote: 'Please make a reusable release analysis workflow',
   currentCoverage: 'No existing release workflow', target: 'skills/release-analysis/SKILL.md',
   proposal: 'Exclude manual approval waits; report median and p95 duration.',
+  proposalRequirements: [{ message: 's1/m1', quote: 'compare successful deployments, exclude manual approval waits, and report median and p95 duration' }],
   benefit: 'Repeatable release comparisons', confidence: 'high',
 };
 const mixed = { coverage: { status: 'complete' }, findings: [release],
   excluded: ['s3/m1', 's4/m1', 's5/m1'].map((message) => ({ message, reason: 'Synthetic or temporary' })) };
 const covered = { findings: [
-  { topic: 'doc-inventory', category: 'covered', currentCoverage: 'documentation skill' },
-  { topic: 'incident-trigger', category: 'discovery', proposal: 'Add postmortem trigger', target: 'incident-review' },
-  { topic: 'external-review', category: 'covered', evidence: ['s8/m2'] },
+  { topic: 'doc-inventory', category: 'covered', currentCoverage: 'Existing guidance meets this request.',
+    guidanceReferences: [{ path: 'skills/documentation/SKILL.md', section: 'Body' }] },
+  { topic: 'incident-trigger', category: 'discovery', proposal: 'Expand activation vocabulary.',
+    target: 'skills/incident-review/SKILL.md', targetSection: 'description',
+    guidanceReferences: [{ path: 'skills/incident-review/SKILL.md', section: 'Description' }],
+    proposalRequirements: [{ message: 's7/m1', quote: 'When I ask for a postmortem, use our incident review skill too.' }] },
+  { topic: 'external-review', category: 'covered', evidence: ['s8/m2'], supersededEvidence: ['s8/m1'],
+    guidanceReferences: [{ path: 'skills/review-workflow/SKILL.md', section: 'Body' }] },
 ] };
 const partial = { coverage: { status: 'partial', limitations: [
-  'page-2 failed; OtherChat unavailable; available 2026-10-13 through 2026-10-20; archives unchecked',
-] }, findings: [{ topic: 'doc-inventory', category: 'covered', evidence: ['s9/m1'] }] };
+  'Only the accessible portion could be reviewed.',
+], requested: { start: '2026-10-01', end: '2026-10-31', timezone: 'UTC' },
+available: { start: '2026-10-13', end: '2026-10-20', timezone: 'UTC' },
+paginationExhausted: false, pendingCursors: ['page-2'], archivedChecked: false,
+unavailableSources: ['OtherChat'] }, findings: [{ topic: 'doc-inventory', category: 'covered', evidence: ['s9/m1'] }] };
 
 function rejectsMutation(check, good, mutate) {
   check(good);
@@ -42,40 +51,69 @@ test('history screening rejects synthetic recommendations, duplicate counts, and
   rejectsMutation(checkMixed, mixed, (v) => { v.findings[0].occurrences = 2; });
   rejectsMutation(checkMixed, mixed, (v) => { v.findings[0].evidence = ['s2/m1']; });
   rejectsMutation(checkMixed, mixed, (v) => { v.findings[0].proposal = ''; });
+  for (const quote of [
+    'compare successful deployments',
+    'exclude manual approval waits',
+    'report median and p95 duration',
+  ]) {
+    rejectsMutation(checkMixed, mixed, (v) => { v.findings[0].proposalRequirements[0].quote = quote; });
+  }
+  rejectsMutation(checkMixed, mixed, (v) => { v.findings[0].proposalRequirements[0].message = 's2/m1'; });
+  rejectsMutation(checkMixed, mixed, (v) => { v.findings[0].proposalRequirements[0].quote += ' invented'; });
   rejectsMutation(checkMixed, mixed, (v) => { v.excluded.pop(); });
 });
 test('coverage checks reject duplicate rules, wrong destinations, and superseded preferences', () => {
-  const capitalized = structuredClone(covered);
-  capitalized.findings[0].currentCoverage = 'guidance/current.md, Documentation skill';
-  checkCoverage(capitalized);
-  const described = structuredClone(covered);
-  described.findings[0].currentCoverage = 'guidance/current.md:6–9 already requires concise '
-    + 'maintainer entry points and links to authoritative sources instead of copied inventories.';
-  checkCoverage(described);
-  rejectsMutation(checkCoverage, described, (v) => {
-    v.findings[0].currentCoverage = 'guidance/current.md covers incident reviews.';
+  rejectsMutation(checkCoverage, covered, (v) => {
+    v.findings[0].guidanceReferences[0].path = 'skills/incident-review/SKILL.md';
   });
   rejectsMutation(checkCoverage, covered, (v) => { v.findings[0].category = 'new-skill'; });
   rejectsMutation(checkCoverage, covered, (v) => { v.findings[1].category = 'new-skill'; });
   rejectsMutation(checkCoverage, covered, (v) => { v.findings[1].target = 'AGENTS.md'; });
+  rejectsMutation(checkCoverage, covered, (v) => { v.findings[1].targetSection = 'Body'; });
+  rejectsMutation(checkCoverage, covered, (v) => { v.findings[1].proposalRequirements = []; });
   rejectsMutation(checkCoverage, covered, (v) => { v.findings[2].evidence = ['s8/m1']; });
+  rejectsMutation(checkCoverage, covered, (v) => { v.findings[2].supersededEvidence = []; });
 });
 test('partial evidence cannot become full coverage, an empty audit, or invented evidence', () => {
-  const namedDates = structuredClone(partial);
-  namedDates.coverage.limitations = [
-    'Requested October 1–31, 2026. Available October 13–20. page-2 failed; OtherChat denied; archives unchecked',
-  ];
-  checkPartial(namedDates);
-  rejectsMutation(checkPartial, namedDates, (v) => {
-    v.coverage.limitations[0] = v.coverage.limitations[0].replace('13–20', '1–31');
-  });
   rejectsMutation(checkPartial, partial, (v) => {
-    v.coverage.limitations[0] = v.coverage.limitations[0].replace('2026-10-20', '2026-10-31');
+    v.coverage.available.end = '2026-10-31';
   });
+  rejectsMutation(checkPartial, partial, (v) => { v.coverage.pendingCursors = []; });
+  rejectsMutation(checkPartial, partial, (v) => { v.coverage.unavailableSources = []; });
+  rejectsMutation(checkPartial, partial, (v) => { v.coverage.archivedChecked = true; });
+  rejectsMutation(checkPartial, partial, (v) => { v.coverage.paginationExhausted = true; });
   rejectsMutation(checkPartial, partial, (v) => { v.coverage.status = 'complete'; });
   rejectsMutation(checkPartial, partial, (v) => { v.coverage.limitations = []; });
   rejectsMutation(checkPartial, partial, (v) => { v.findings = []; });
   rejectsMutation(checkPartial, partial, (v) => { v.findings[0].evidence = ['other/m1']; });
+});
+test('guidance references resolve inventory sections to their owning skills', () => {
+  const value = structuredClone(covered);
+  const headings = ['Documentation skill', 'Incident review skill', 'Review workflow'];
+  value.findings.forEach((finding, index) => {
+    finding.guidanceReferences = [{ path: 'guidance/current.md', section: `${headings[index]} — Body` }];
+  });
+  checkCoverage(value);
+  rejectsMutation(checkCoverage, value, (v) => {
+    v.findings[0].guidanceReferences[0].section = 'Incident review skill';
+  });
+  rejectsMutation(checkCoverage, value, (v) => {
+    v.findings[0].guidanceReferences[0].path = 'guidance/missing.md';
+  });
+});
+test('audit contracts accept paraphrased explanations with the same structured evidence', () => {
+  const paraphrased = structuredClone(mixed);
+  paraphrased.findings[0].proposal = 'Implement the requested comparison and distribution summary.';
+  paraphrased.findings[0].currentCoverage = 'No applicable owner exists.';
+  paraphrased.excluded.forEach((item) => { item.reason = 'Not durable user feedback.'; });
+  checkMixed(paraphrased);
+  const reworded = structuredClone(covered);
+  reworded.findings[0].currentCoverage = 'The existing owner already addresses this.';
+  reworded.findings[1].proposal = 'Recognize the alternate request phrasing.';
+  checkCoverage(reworded);
+  const dates = structuredClone(partial);
+  dates.coverage.limitations = ['Retrieval and source availability constrain this audit.'];
+  checkPartial(dates);
 });
 test('dashboard reports accept plain or fenced JSON and reject malformed output', () => {
   const json = JSON.stringify(partial);

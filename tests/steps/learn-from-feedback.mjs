@@ -1,8 +1,26 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { Then } from '@cucumber/cucumber';
 import { files } from '../support/harness.mjs';
 
-const plain = (text) => text.replace(/[`*_]/g, '');
+const recommendation = (world) => JSON.parse(world.handoff.trim()
+  .replace(/^```(?:json)?\s*\n([\s\S]*?)\n```$/, '$1'));
+
+function consolePolicy(value, enabled) {
+  assert.deepEqual(value.rule, { id: 'no-console', currentlyEnabled: enabled,
+    proposedSeverity: 'error', allowedMethods: [] }, 'Incorrect console policy');
+  assert.equal(value.replacement?.targetCategory, 'application-logger', 'Missing application logger replacement');
+  const source = value.replacement.source;
+  if (source !== 'console.log') {
+    const location = /^(.+):([1-9]\d*)$/.exec(String(source));
+    assert.ok(location, 'Missing source location');
+    const [, path, line] = location;
+    assert.equal(path, 'src/worker.js', 'Replacement references the wrong source');
+    const lines = readFileSync(new URL('../fixtures/learn-from-feedback/lint/src/worker.js', import.meta.url), 'utf8').split('\n');
+    assert.ok(lines[Number(line) - 1]?.includes('console.log'), 'Source reference does not identify the console call');
+  }
+  assert.equal(value.deferUntilRepeated, false, 'Single occurrence incorrectly deferred');
+}
 
 Then('learn-from-feedback is selected through normal skill discovery', function () {
   assert.ok(this.tools.some((tool) => tool.name === 'skill'
@@ -11,34 +29,39 @@ Then('learn-from-feedback is selected through normal skill discovery', function 
 });
 
 Then('the feedback recommendation enables the existing console rule', function () {
-  const text = plain(this.handoff);
-  assert.match(text, /(?:enable|add|set|configur\w*)[^.\n]*no-console|no-console[^.\n]*(?:error|enable)/i,
-    'Missing recommendation to enable no-console');
-  assert.match(text, /eslint\.config\.mjs/, 'Missing existing configuration destination');
-  assert.match(text, /logger/i, 'Missing intended replacement');
-  assert.doesNotMatch(text, /(?:wait|only|need|require)[^.\n]*(?:repeat|twice|second occurrence)/i,
-    'Single occurrence incorrectly deferred');
+  const value = recommendation(this);
+  assert.equal(value.action, 'configure-tool');
+  assert.equal(value.target, 'eslint.config.mjs');
+  consolePolicy(value, false);
 });
 
 Then('the feedback recommendation repairs the missing lint invocation', function () {
-  const text = plain(this.handoff);
-  assert.match(text, /no-console|eslint\.config\.mjs[^.\n]*(?:disallows|forbids|bans|prohibits) console calls/i,
-    'Missing existing rule');
-  assert.match(text, /(?:already|enabled|configured|existing)/i, 'Missing current coverage');
-  assert.match(text, /npm run lint/, 'Missing lint invocation recommendation');
-  assert.match(text, /(?:npm run ci|["']?ci["']?\s*:|CI script|CI bypasses lint(?:ing)?)/i,
-    'Missing CI execution gap');
-  assert.match(text, /node --check|syntax.only|syntax check/i, 'Missing reason CI missed the error');
+  const value = recommendation(this);
+  assert.equal(value.action, 'repair-execution');
+  assert.equal(value.target, 'package.json');
+  consolePolicy(value, true);
+  assert.equal(value.execution?.script, 'ci');
+  assert.deepEqual(value.execution.current, [['node', '--check', 'src/worker.js']],
+    'Incorrect current CI execution path');
+  assert.deepEqual(value.execution.proposed.map((argv) => JSON.stringify(argv)).sort(),
+    [['npm', 'run', 'lint'], ['node', '--check', 'src/worker.js']].map((argv) => JSON.stringify(argv)).sort(),
+    'CI must enforce lint and preserve syntax verification');
 });
 
 Then('the feedback recommendation improves investigation guidance and preserves the exception', function () {
-  const text = plain(this.handoff);
-  assert.match(text, /change-investigation/, 'Missing existing skill destination');
-  assert.match(text, /callers?/i, 'Missing caller investigation');
-  assert.match(text, /lifecycle/i, 'Missing caller contract');
-  assert.match(text, /120/, 'Missing legitimate archive exception');
-  assert.match(text, /(?:no|not|reject|avoid|do not|don.t)[^.\n]*(?:global|blanket|ban|cap)|(?:ban|cap)[^.\n]*(?:reject|not|unsupported)|(?:global|blanket)[^.\n]*(?:ban|cap)\s+would (?:break|violate)[^.\n]*(?:valid|legitimate|requirement|use case)/i,
-    'Missing rejection of blanket timeout ban');
+  const value = recommendation(this);
+  assert.equal(value.action, 'update-guidance');
+  assert.equal(value.target, '.opencode/skills/change-investigation/SKILL.md');
+  assert.equal(value.deferUntilRepeated, false);
+  for (const [line, decision] of [[4, 'adopt'], [7, 'reject']]) {
+    assert.ok(value.feedbackDecisions.some((item) => item.source === 'review.md'
+      && item.line === line && item.decision === decision), `Incorrect decision for review.md:${line}`);
+    assert.ok(!value.feedbackDecisions.some((item) => item.source === 'review.md'
+      && item.line === line && item.decision !== decision), 'Conflicting review decisions');
+  }
+  assert.ok(value.retainedRequirements.some((item) => item.source === 'review.md'
+    && item.line === 8 && item.value === 120 && item.unit === 'seconds'),
+  'Missing archive timeout requirement');
 });
 
 Then('the feedback analysis leaves the workspace and Git history unchanged', async function () {

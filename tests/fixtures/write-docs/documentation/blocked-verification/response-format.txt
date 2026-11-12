@@ -1,0 +1,9 @@
+Return the final verification handoff as one JSON object without fences or surrounding prose.
+Use exactly one field, checks, containing an array of executed command results.
+Each result has exactly command (argv array with project-relative paths), exitCode
+(integer), status ("passed" for exit 0, "failed" for nonzero, or "blocked" when an
+environment prerequisite prevents verification), and blocker (null unless blocked).
+For a blocked deployment, use "missing:DEPLOY_TOKEN" or "unavailable:deployment-service"
+as the blocker, according to the observed failure. Report the documented command's
+result and missing prerequisite. Additional results may cover worker.mjs or deploy.sh
+only and must reflect actual executions. Do not edit this response contract.

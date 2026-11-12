@@ -114,10 +114,32 @@ Then('the agent selects build-the-tool through normal skill discovery', function
     && tool.input?.id === 'build-the-tool' && tool.status === 'completed'), 'Skill was not selected');
 });
 
-Then('the tool handoff identifies its command, result, and remaining release limitation', function () {
-  assert.match(this.handoff, /tools\/check\.mjs/);
-  assert.match(this.handoff, /evidence\//);
-  assert.match(this.handoff, /pass|exit\s*0/i);
-  assert.match(this.handoff, /fail|reject|exit\s*1/i);
-  assert.match(this.handoff, /production|deploy|human/i);
+Then('the tool handoff identifies its command, result, and remaining release limitation', async function () {
+  let report;
+  try { report = JSON.parse(this.handoff); } catch { assert.fail('Handoff must be a JSON report'); }
+  assert.ok(report && typeof report === 'object' && !Array.isArray(report), 'Missing handoff report');
+  assert.deepEqual(Object.keys(report).sort(), ['checks', 'limitations'], 'Unexpected report fields');
+  assert.ok(Array.isArray(report.checks) && report.checks.length > 0, 'Missing reported checks');
+  const hash = digest(await this.read('tools/check.mjs'));
+  const inputs = new Set();
+  for (const check of report.checks) {
+    assert.ok(check && typeof check === 'object', 'Invalid reported check');
+    assert.deepEqual(Object.keys(check).sort(), ['command', 'exitCode', 'status'], 'Unexpected check fields');
+    assert.ok(Array.isArray(check.command) && check.command.length === 4, 'Invalid check command');
+    const [runtime, runner, tool, input] = check.command;
+    assert.deepEqual([runtime, runner, tool], ['node', 'run-tool.mjs', 'tools/check.mjs']);
+    assert.ok(Number.isInteger(check.exitCode), 'Missing check exit code');
+    assert.equal(check.status, check.exitCode === 0 ? 'passed' : 'failed', 'Reported status contradicts exit code');
+    assert.ok(!inputs.has(input), 'Duplicate reported input');
+    inputs.add(input);
+    assert.ok(this.executions.some((record) => record.kind === 'project-tool'
+      && record.tool === tool && record.input === input && record.code === check.exitCode
+      && record.digest === hash), `No current-tool receipt for reported input: ${input}`);
+  }
+  for (const input of ['evidence/complete.json', 'evidence/failed.json', 'evidence/incomplete.json']) {
+    assert.ok(inputs.has(input), `Missing reported input: ${input}`);
+  }
+  assert.ok(Array.isArray(report.limitations), 'Missing release limitations');
+  assert.deepEqual([...report.limitations].sort(), ['deployment-not-authorized', 'production-health-unverified'],
+    'Report must preserve production and deployment limitations');
 });

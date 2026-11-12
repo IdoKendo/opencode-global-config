@@ -6,3 +6,6 @@ command. Do not write files. Return one JSON object, optionally fenced as JSON, 
 Represent each proposed command as {"cwd": "absolute directory", "argv": ["executable", "argument", ...]}.
 Use separate argv entries rather than shell expressions. Preserve the case IDs requested in task.txt.
 Use human-readable text for explanations. A proposed command is not a claim that it was executed.
+Operational decisions belong in the structured fields requested by each task. Explanatory text
+is free-form. Hook and verification commands use argv arrays, without shell expressions.
+In task schemas, argv is an array of argument strings; argv[] is an array of those command arrays.

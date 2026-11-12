@@ -1,0 +1,10 @@
+Return the final handoff as one JSON object, without Markdown fences or surrounding prose.
+Use exactly these fields:
+- checks: an array of executed checks. Each entry has exactly command (an argv array,
+  using the project-relative paths from the task), exitCode (integer), and status
+  ("passed" for exit 0 or "failed" for nonzero). Report each task input separately;
+  additional checks may be included only if you executed them with the project runner.
+- limitations: an array of applicable limitation identifiers. Use
+  "production-health-unverified" when local evidence does not establish production health,
+  and "deployment-not-authorized" when deployment still requires human approval.
+Report observed results, not intended results. Do not edit this response contract.

@@ -53,20 +53,22 @@ export const scenarios = {
   },
   'Suggest an existing lint rule after one correction': {
     fixture: 'learn-from-feedback/lint',
+    includes: ['learn-from-feedback/common'],
     prompt: 'Feedback on your worker change: use the application logger, not console.log. '
       + 'This is the first occurrence. Please respond after inspecting the local project. '
-      + 'Suggestions only; do not edit files or access external systems.',
+      + 'Suggestions only; do not edit files or access external systems. Read response-format.md and use its output format.',
   },
   'Repair the execution gap instead of duplicating a configured rule': {
     fixture: 'learn-from-feedback/gap',
-    includes: ['learn-from-feedback/lint'],
+    includes: ['learn-from-feedback/common', 'learn-from-feedback/lint'],
     prompt: 'Read review.md and inspect the project. What do you recommend in response? '
-      + 'Suggestions only; do not edit files or access external systems.',
+      + 'Suggestions only; do not edit files or access external systems. Read response-format.md and use its output format.',
   },
   'Put judgment feedback in the existing skill without adopting a disputed ban': {
     fixture: 'learn-from-feedback/judgment',
+    includes: ['learn-from-feedback/common'],
     prompt: 'Read review.md and the local investigation guidance. What do you recommend in response? '
-      + 'Suggestions only; do not edit files or access external systems.',
+      + 'Suggestions only; do not edit files or access external systems. Read response-format.md and use its output format.',
   },
   'Migrate service timeouts with a reusable safe tool': {
     fixture: 'build-the-tool/migrate',
@@ -78,7 +80,8 @@ export const scenarios = {
     fixture: 'build-the-tool/check',
     includes: ['build-the-tool/common'],
     tool: 'check',
-    prompt: 'Read task.txt and implement the local release evidence gate.',
+    prompt: 'Read task.txt and implement the local release evidence gate. '
+      + 'Read response-format.txt and follow it for the final handoff.',
   },
   'Fix empty checkout totals without repairing adjacent shipping behavior': {
     fixture: 'atomic-code-changes/checkout',
@@ -182,11 +185,11 @@ export const scenarios = {
   'Correct a broken example using execution evidence': {
     fixture: 'write-docs/documentation/broken-example',
     includes: ['write-docs/documentation/common'],
-    prompt: 'Verify and fix docs/usage.md.',
+    prompt: 'Verify and fix docs/usage.md. Read response-format.txt and follow it for the final handoff.',
   },
   'Report an example that cannot be verified': {
     fixture: 'write-docs/documentation/blocked-verification',
-    prompt: 'Verify docs/deployment.md.',
+    prompt: 'Verify docs/deployment.md. Read response-format.txt and follow it for the final handoff.',
   },
   'Make an authorized documentation edit without staging or committing': {
     fixture: 'write-docs/documentation/guardrails',

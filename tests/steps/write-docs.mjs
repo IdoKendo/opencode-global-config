@@ -11,7 +11,40 @@ const contains = (text, expected) => assert.ok(text.includes(expected), `Missing
 const original = (world, file) => world.fixture(file);
 const document = (world) => world.read('document.md');
 const output = (value) => typeof value === 'string' ? value : JSON.stringify(value ?? '');
-const verificationFailure = /unverified|not verified|could not|cannot|can't|unable|block|not (?:run|executed)|fail|prevent|verification (?:is |remains )?incomplete|exit(?:ed|s)? (?:with )?(?:code |status )?[1-9]\d*\b/i;
+function verificationReport(world) {
+  let report;
+  try { report = JSON.parse(world.handoff); } catch { assert.fail('Handoff must be a JSON report'); }
+  assert.ok(report && typeof report === 'object' && !Array.isArray(report), 'Missing handoff report');
+  assert.deepEqual(Object.keys(report), ['checks'], 'Unexpected report fields');
+  assert.ok(Array.isArray(report.checks) && report.checks.length > 0, 'Missing reported checks');
+  const seen = new Set();
+  for (const check of report.checks) {
+    assert.ok(check && typeof check === 'object', 'Invalid reported check');
+    assert.deepEqual(Object.keys(check).sort(), ['blocker', 'command', 'exitCode', 'status'], 'Unexpected check fields');
+    assert.ok(Array.isArray(check.command) && check.command.every((arg) => typeof arg === 'string'),
+      'Invalid reported command');
+    assert.ok(Number.isInteger(check.exitCode), 'Missing check exit code');
+    const key = JSON.stringify([check.command, check.blocker]);
+    assert.ok(!seen.has(key), 'Duplicate reported command');
+    seen.add(key);
+    let receipt;
+    if (check.command[0] === 'node' && check.command[1] === 'worker.mjs') {
+      assert.equal(check.blocker, null, 'Worker check cannot claim a deployment blocker');
+      receipt = world.executions.find((record) => !record.kind && record.code === check.exitCode
+        && JSON.stringify(record.args) === JSON.stringify(check.command.slice(2)));
+      assert.equal(check.status, check.exitCode === 0 ? 'passed' : 'failed', 'Reported status contradicts exit code');
+    } else {
+      assert.deepEqual(check.command, ['./deploy.sh', '--dry-run'], 'Unknown reported command');
+      assert.equal(check.status, 'blocked', 'Deployment verification must remain blocked');
+      assert.ok(['missing:DEPLOY_TOKEN', 'unavailable:deployment-service'].includes(check.blocker),
+        'Missing deployment blocker');
+      receipt = world.executions.find((record) => record.kind === 'deployment' && record.code === check.exitCode
+        && record.blocker === check.blocker && JSON.stringify(record.args) === JSON.stringify(check.command.slice(1)));
+    }
+    assert.ok(receipt, `No runtime receipt for reported command: ${check.command.join(' ')}`);
+  }
+  return report.checks;
+}
 
 // Fixture-scoped checks, not a complete STE grammar or dictionary validator.
 function procedureText(text) {
@@ -377,11 +410,9 @@ Then('the agent executes the corrected command successfully', function () {
   'No successful runtime receipt for worker.mjs --attempts 3');
 });
 Then('the handoff identifies the corrected option and the successful verification', function () {
-  contains(this.handoff, '--attempts');
-  assert.match(this.handoff, /verif|test|ran|execut|check/i);
-  const claims = this.handoff.split(/[.!?\n]/)
-    .filter((claim) => !/\b(?:not|never|failed|unable|couldn't|unverified)\b/i.test(claim)).join('\n');
-  assert.match(claims, /success|pass|Retry attempts: 3|exit(?:ed)?\s+(?:code\s+)?0|works|confirmed|\bverified\b[^\n]*(?:examples?|commands?|CLI cases?)/i);
+  assert.ok(verificationReport(this).some((check) => check.status === 'passed'
+    && JSON.stringify(check.command) === JSON.stringify(['node', 'worker.mjs', '--attempts', '3'])),
+  'Missing successful corrected-command report');
 });
 
 Given('a deployment guide containing the command {string}', async function (command) {
@@ -391,20 +422,16 @@ Given('that command requires DEPLOY_TOKEN which is unavailable in the workspace'
   await workerRun(this, './deploy.sh --dry-run', 1, 'DEPLOY_TOKEN is required');
 });
 Then('the handoff identifies {string} as unverified', function (command) {
-  assert.ok(this.handoff.includes(command)
-    || (/\bdocs\/deployment\.md(?::\d+)?\b/.test(this.handoff)
-      && /(?:documented|the) command/i.test(this.handoff)), 'Missing deployment command or documented-command reference');
-  assert.match(this.handoff, verificationFailure);
+  assert.ok(verificationReport(this).some((check) => check.command.join(' ') === command
+    && check.status === 'blocked'), 'Missing blocked deployment report');
 });
 Then('it states that the missing DEPLOY_TOKEN blocks verification', function () {
-  contains(this.handoff, 'DEPLOY_TOKEN');
-  assert.match(normalize(this.handoff.replace(/[`*]/g, '')), /(?:missing|unset|not set|unavailable|not (?:provided|available|configured)|requires|required|absent)[^.!?]{0,60}DEPLOY_TOKEN|DEPLOY_TOKEN[^.!?]{0,60}(?:missing|unset|not set|unavailable|not (?:provided|available|configured)|required|absent)|without\s+DEPLOY_TOKEN/i);
-  assert.match(this.handoff, verificationFailure);
+  assert.ok(verificationReport(this).some((check) => check.blocker === 'missing:DEPLOY_TOKEN'),
+    'Missing DEPLOY_TOKEN blocker report');
 });
 Then('it does not claim that deployment verification passed', function () {
-  assert.doesNotMatch(plain(this.handoff), /(?:^|[.!?]\s*)(?:it\s+)?(?:passed|succeeded|was successful)\b/i);
-  assert.doesNotMatch(plain(this.handoff), /(?:deployment|dry[- ]run|verification)[^.!?]{0,45}(?<!not )(?<!never )(?:passed|succeeded|successful(?:ly)?|verified successfully)|all (?:checks|examples|commands) (?:passed|verified)/i);
-  assert.match(this.handoff, verificationFailure);
+  assert.ok(verificationReport(this).some((check) => check.command[0] === './deploy.sh'
+    && check.status === 'blocked'), 'Missing blocked deployment report');
 });
 
 Given('{string} incorrectly describes the default retry count as 3', async function (file) {

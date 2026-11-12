@@ -11,78 +11,78 @@ const support = await loadSupport(runConfiguration);
 async function invoke(text, world) {
   const matches = support.stepDefinitions.filter((step) => step.matchesStepName(text));
   assert.equal(matches.length, 1);
-  const { parameters } = await matches[0].getInvocationParameters({ step: { text }, world });
-  return matches[0].code.apply(world, parameters);
+  return matches[0].code.call(world);
 }
 
+const lint = { action: 'configure-tool', target: 'eslint.config.mjs', deferUntilRepeated: false,
+  rule: { id: 'no-console', currentlyEnabled: false, proposedSeverity: 'error', allowedMethods: [] },
+  replacement: { source: 'console.log', targetCategory: 'application-logger' } };
+const gap = { ...lint, action: 'repair-execution', target: 'package.json',
+  rule: { ...lint.rule, currentlyEnabled: true },
+  execution: { script: 'ci', current: [['node', '--check', 'src/worker.js']],
+    proposed: [['npm', 'run', 'lint'], ['node', '--check', 'src/worker.js']] } };
+const judgment = { action: 'update-guidance', target: '.opencode/skills/change-investigation/SKILL.md',
+  deferUntilRepeated: false,
+  feedbackDecisions: [{ source: 'review.md', line: 4, decision: 'adopt' },
+    { source: 'review.md', line: 7, decision: 'reject' }],
+  retainedRequirements: [{ source: 'review.md', line: 8, value: 120, unit: 'seconds' }] };
 const cases = [
-  ['the feedback recommendation enables the existing console rule',
-    'Enable no-console in eslint.config.mjs. Use the application logger.',
-    ['no-console', 'eslint.config.mjs', 'logger']],
-  ['the feedback recommendation repairs the missing lint invocation',
-    'no-console is already enabled. The CI script uses node --check only. Add npm run lint.',
-    ['no-console', 'already enabled', 'CI script', 'node --check', 'npm run lint']],
-  ['the feedback recommendation improves investigation guidance and preserves the exception',
-    'Update change-investigation to read callers and lifecycle requirements. '
-      + 'Reject the global cap: archives need 120 seconds.',
-    ['change-investigation', 'callers', 'lifecycle', '120', 'Reject']],
+  ['the feedback recommendation enables the existing console rule', lint, [
+    (v) => { v.action = 'new-tool'; },
+    (v) => { v.target = 'AGENTS.md'; },
+    (v) => { v.rule.id = 'no-debugger'; },
+    (v) => { v.rule.proposedSeverity = 'off'; },
+    (v) => { v.rule.allowedMethods = ['log']; },
+    (v) => { v.replacement.targetCategory = 'standard-output'; },
+    (v) => { v.replacement.source = 'src/worker.js:99'; },
+    (v) => { v.replacement.source = 'src/other.js:1'; },
+    (v) => { v.deferUntilRepeated = true; },
+  ]],
+  ['the feedback recommendation repairs the missing lint invocation', gap, [
+    (v) => { v.action = 'configure-tool'; },
+    (v) => { v.rule.currentlyEnabled = false; },
+    (v) => { v.target = 'eslint.config.mjs'; },
+    (v) => { v.execution.script = 'test'; },
+    (v) => { v.execution.current = [['npm', 'run', 'lint']]; },
+    (v) => { v.execution.proposed.shift(); },
+    (v) => { v.execution.proposed.pop(); },
+    (v) => { v.execution.proposed[0] = ['npm', 'run', 'missing']; },
+  ]],
+  ['the feedback recommendation improves investigation guidance and preserves the exception', judgment, [
+    (v) => { v.action = 'new-tool'; },
+    (v) => { v.target = 'AGENTS.md'; },
+    (v) => { v.deferUntilRepeated = true; },
+    (v) => { v.feedbackDecisions[0].decision = 'already-covered'; },
+    (v) => { v.feedbackDecisions[1].decision = 'adopt'; },
+    (v) => { v.feedbackDecisions.push({ source: 'review.md', line: 7, decision: 'adopt' }); },
+    (v) => { v.retainedRequirements = []; },
+    (v) => { v.retainedRequirements[0].value = 30; },
+    (v) => { v.retainedRequirements[0].unit = 'milliseconds'; },
+  ]],
 ];
 
-for (const [step, good, required] of cases) {
+for (const [step, good, mutations] of cases) {
   test(step, async () => {
-    await invoke(step, { handoff: good });
-    await invoke(step, { handoff: `**Recommendation:** ${good}` });
-    for (const phrase of required) {
-      await assert.rejects(() => invoke(step, { handoff: good.replace(phrase, 'omitted') }),
-        assert.AssertionError);
+    for (const explanation of [undefined, 'Use the existing safeguard.',
+      'Address the execution path rather than adding a duplicate policy.']) {
+      const json = JSON.stringify({ ...good, explanation });
+      await invoke(step, { handoff: json });
+      await invoke(step, { handoff: `\`\`\`json\n${json}\n\`\`\`` });
     }
-    await assert.rejects(() => invoke(step, { handoff: 'I will remember next time.' }),
-      assert.AssertionError);
-  });
+    for (const mutate of mutations) {
+      const bad = structuredClone(good);
+      mutate(bad);
+      await assert.rejects(() => invoke(step, { handoff: JSON.stringify(bad) }), assert.AssertionError);
+    }
+    await assert.rejects(() => invoke(step, { handoff: 'I will remember next time.' }), SyntaxError);
+});
 }
 
-test('harm-based rejection preserves the valid exception without endorsing the cap', async () => {
-  const step = cases[2][0];
-  const context = 'Update change-investigation to read callers and lifecycle requirements. '
-    + 'Archive exports legitimately require 120 seconds. ';
-  await invoke(step, {
-    handoff: context + 'A global 30-second timeout cap would break that valid use case.',
-  });
-  for (const advice of [
-    'A global 30-second cap is appropriate.',
-    'Apply the global cap even though it would break the valid archive use case.',
-    'A global cap would preserve that valid use case.',
-    '',
-  ]) {
-    await assert.rejects(() => invoke(step, { handoff: context + advice }),
-      /Missing rejection of blanket timeout ban/);
-  }
-});
-
-test('existing console rule can be identified by its configuration and behavior', async () => {
-  const step = cases[1][0];
-  const handoff = 'eslint.config.mjs:1 already disallows console calls. '
-    + 'The CI script uses node --check only. Add npm run lint.';
-  await invoke(step, { handoff });
-  await invoke(step, { handoff: handoff.replace('disallows', 'prohibits') });
-  await invoke(step, { handoff: 'The existing no-console rule covers the worker. '
-    + 'The CI script uses node --check only. Add npm run lint.' });
-  const bypass = 'CI bypasses linting. The no-console rule already covers the worker. '
-    + 'It uses node --check only. Update ci to npm run lint && node --check src/worker.js.';
-  await invoke(step, { handoff: bypass });
-  await assert.rejects(() => invoke(step, { handoff: bypass.replace('CI bypasses linting.', '') }),
-    /Missing CI execution gap/);
-  for (const replacement of ['allows console calls', 'disallows debugger statements']) {
-    await assert.rejects(() => invoke(step, {
-      handoff: handoff.replace('disallows console calls', replacement),
-    }), /Missing existing rule/);
-  }
-});
-
-test('a single correction cannot be deferred until it repeats', async () => {
-  await assert.rejects(() => invoke(cases[0][0], {
-    handoff: cases[0][1] + ' Wait for a second occurrence.',
-  }), /Single occurrence incorrectly deferred/);
+test('feedback accepts source locations and either order of independent CI checks', async () => {
+  await invoke(cases[0][0], { handoff: JSON.stringify({ ...lint,
+    replacement: { ...lint.replacement, source: 'src/worker.js:1' } }) });
+  await invoke(cases[1][0], { handoff: JSON.stringify({ ...gap,
+    execution: { ...gap.execution, proposed: [...gap.execution.proposed].reverse() } }) });
 });
 
 test('discovery requires successful selection of the intended skill', async () => {

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { resolve } from 'node:path';
 
 export const parsePlan = (text) => JSON.parse(text.trim()
   .replace(/^```(?:json)?\s*\n([\s\S]*?)\n```$/, '$1'));
@@ -27,19 +28,24 @@ export function checkDispatch(plan) {
   assert.ok(plan.promptPath.startsWith('/'), 'Prompt path must be absolute');
   assert.equal(flag(args, '-P', '--prompt-file'), plan.promptPath);
   assert.ok(!has(args, '-w', '--with-changes', '--headless', '-s', '--session'));
-  const preflight = plan.preflight.join(' ');
-  assert.match(preflight, /npm ci|runs (?:the )?(?:configured )?npm (?:dependency[ -])?install(?:ation)? hook/i);
-  assert.match(preflight, /\.env/);
-  assert.match(preflight, /opencode|agent|pane/i);
+  checkProvisioning(plan.effects, true);
+}
+
+function checkProvisioning(effects, terminal) {
+  assert.deepEqual(effects.postCreate, [['npm', 'ci']]);
+  assert.deepEqual(effects.files, [{ operation: 'copy', path: '.env' }]);
+  assert.equal(effects.terminal, terminal);
+  assert.equal(effects.agent, terminal ? 'opencode' : null);
 }
 
 export function checkHandoff(plan) {
-  for (const pattern of [/src\/retry\.mjs/, /duplicate/i,
-    /[Nn]ode[\s\S]*--test[\s\S]*tests\/retry\.test\.mjs/, /diff/i, /stop/i]) {
-    assert.match(plan.handoff, pattern);
-  }
-  assert.match(plan.handoff, /(?:no|not|never|without)[^.\n]*(?:commit|push)/i);
-  assert.match(plan.handoff, /(?:no|not|never|without)[^.\n]*external/i);
+  const handoff = plan.handoff;
+  assert.deepEqual(handoff.scope.files, ['src/retry.mjs']);
+  assert.equal(handoff.scope.issue, 'duplicate-retry-attempts');
+  assert.deepEqual(handoff.verification, [['node', '--test', 'tests/retry.test.mjs']]);
+  assert.deepEqual(handoff.report, { diff: true, testEvidence: true });
+  assert.equal(handoff.stopAfterReport, true);
+  assert.deepEqual(handoff.permissions, { commit: false, push: false, externalChanges: false });
 }
 
 export function checkHeadless(plan) {
@@ -54,23 +60,26 @@ export function checkHeadless(plan) {
   command(plan.attachLater, 'open', 'audit-42');
   command(plan.removeLater, 'remove', 'audit-42');
   assert.equal(plan.workingDirectory, '/srv/billing__worktrees/audit-42/service');
-  assert.match(plan.effects, /npm ci/);
-  assert.match(plan.effects, /\.env/);
-  assert.match(plan.effects, /(?:no|not|without)[^.\n]*(?:agent|terminal|tmux)/i);
+  assert.ok(!has(plan.removeLater.argv, '--keep-branch', '-k', '--force', '-f'));
+  checkProvisioning(plan.effects, false);
 }
 
 export function checkMonitor(plan) {
   assert.deepEqual(plan.commands.map((item) => item.argv[1]), ['status', 'capture', 'send', 'wait']);
   for (const item of plan.commands) command(item, item.argv[1], 'billing:retry');
-  const followup = plan.commands[2].argv.join(' ');
-  assert.match(followup, /tests\/fixtures\/retry\.json/);
-  assert.match(followup, /node --test tests\/retry\.test\.mjs/);
+  const send = plan.commands[2].argv;
+  assert.equal(send.length, 4, 'Send one structured message inline');
+  let followup;
+  assert.doesNotThrow(() => { followup = JSON.parse(send[3]); });
+  assert.equal(followup.fixturePath, 'tests/fixtures/retry.json');
+  assert.deepEqual(followup.verification, ['node', '--test', 'tests/retry.test.mjs']);
   const timeout = Number(flag(plan.commands[3].argv, '--timeout'));
   assert.ok(Number.isFinite(timeout) && timeout > 0, 'Wait must be bounded');
   assert.equal(plan.verified, false);
-  assert.match(plan.assessment, /fail|exit(?:s)? 1/i);
-  assert.match(plan.waitMeaning, /done|agent.*complet/i);
-  assert.match(plan.addWaitMeaning, /(?:window|terminal).*clos/i);
+  assert.deepEqual(plan.observed, { agentStatus: 'done', verificationExitCode: 1, diffReviewed: false });
+  assert.equal(plan.waitMeaning, 'agent-done');
+  assert.equal(plan.addWaitMeaning, 'terminal-closed');
+  assert.equal(flag(plan.commands[3].argv, '--status') ?? 'done', 'done');
 }
 
 const lifecycle = {
@@ -99,12 +108,21 @@ export function checkLifecycle(plan) {
 }
 
 export function checkCleanup(plan) {
-  assert.ok(plan.before.some((item) => item.argv[0] === 'git' && item.argv.includes('status')),
-    'Missing Git-state inspection before cleanup');
+  for (const id of ['merge-keep', 'merge-clean', 'remove-all', 'keep-branch']) {
+    assert.ok(plan.before.some((item) => item.cwd === `/srv/billing__worktrees/${id}`
+      && item.argv[0] === 'git' && item.argv[1] === 'status'), `Missing Git-state inspection for ${id}`);
+  }
   assert.ok(plan.after.some((item) => item.argv[0] === 'workmux' && item.argv[1] === 'list'),
     'Missing post-cleanup inventory');
-  for (const pattern of [/squash/i, /npm test/, /archive-evidence\.sh/,
-    /evidence/i, /outside|external|surviv|preserv/i]) assert.match(plan.preparation, pattern);
+  assert.equal(plan.preparation.mergeStrategy, 'squash');
+  assert.deepEqual(plan.preparation.hooks, { preMerge: [['npm', 'test']], preRemove: [['./archive-evidence.sh']] });
+  assert.equal(plan.preparation.requireCleanWorktree, true);
+  assert.equal(plan.preparation.preserveEvidenceBeforeRemoval, true);
+  const destination = plan.preparation.evidenceDestination;
+  assert.ok(typeof destination === 'string' && destination.startsWith('/'), 'Absolute evidence destination required');
+  const normalized = resolve(destination);
+  assert.ok(normalized !== '/srv/billing__worktrees' && !normalized.startsWith('/srv/billing__worktrees/'),
+    'Evidence destination must survive worktree removal');
 }
 
 export function checkAuthorization(plan) {
@@ -116,8 +134,10 @@ export function checkAuthorization(plan) {
       ? ['status', 'diff', 'log'].includes(subcommand)
       : ['list', 'status', 'capture', 'path'].includes(subcommand), 'Unauthorized mutation');
   }
-  assert.match(plan.needed, /authoriz|approv|permission|consent/i);
+  assert.deepEqual(plan.permissions, { commit: false, merge: false, push: false, discard: false });
+  assert.equal(plan.authorizationRequired, true);
   for (const path of ['src/retry.mjs', 'customer-note.txt']) {
-    assert.ok(plan.preserved.some((item) => item.includes(path)), `Missing preserved file ${path}`);
+    assert.ok(plan.preserved.some((item) => item === path
+      || item === `/srv/billing__worktrees/retry/${path}`), `Missing preserved file ${path}`);
   }
 }

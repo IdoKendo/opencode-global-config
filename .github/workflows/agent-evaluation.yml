@@ -1,5 +1,4 @@
 name: Agent Evaluation
-
 on:
   workflow_dispatch:
     inputs:
@@ -11,14 +10,11 @@ on:
   push:
     branches:
       - main
-
 permissions:
   contents: read
-
 concurrency:
   group: agent-evaluation
   cancel-in-progress: false
-
 jobs:
   evaluate:
     name: Agent evaluation without MCP (informational)
@@ -37,7 +33,6 @@ jobs:
         uses: actions/checkout@v6
         with:
           persist-credentials: false
-
       - name: Check model credential
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -50,12 +45,10 @@ jobs:
             openai/*) ;;
             *) echo '::error::This workflow supplies OpenAI credentials; select an openai/... model.'; exit 1 ;;
           esac
-
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: "26"
-
       - name: Disable MCP servers in the CI checkout
         run: |
           node --input-type=module <<'JS'
@@ -67,7 +60,6 @@ jobs:
           writeFileSync('opencode.json', JSON.stringify(config, null, 4) + '\n');
           console.log('CI profile: all configured MCP servers disabled.');
           JS
-
       - name: Install dependencies
         run: |
           if [ -f package-lock.json ]; then
@@ -75,27 +67,23 @@ jobs:
           else
             npm install --no-audit --no-fund
           fi
-
       - name: Install pinned OpenCode
         run: |
           npm install --prefix "$RUNNER_TEMP/opencode-cli" --no-audit --no-fund @opencode/cli@2.1.4
           echo "$RUNNER_TEMP/opencode-cli/node_modules/.bin" >> "$GITHUB_PATH"
-
       - name: Verify OpenCode version
         run: |
           version="$(opencode --version)"
           echo "OpenCode $version"
           version="${version#opencode v}"
           test "$version" = "2.1.4"
-
       - name: Evaluate all behavior families
         id: evaluation
         continue-on-error: true
         env:
           AGENT_TEST_TMPDIR: ${{ runner.temp }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: npm run test:agents -- --parallel 39 --format json:logs/agent-tests/report.json
-
+        run: npm run test:agents -- --parallel 42 --format json:logs/agent-tests/report.json
       - name: Publish evaluation status
         if: always()
         env:
@@ -111,7 +99,6 @@ jobs:
           if [ "$EVALUATION_OUTCOME" = failure ]; then
             echo '::warning::Agent evaluation failed; inspect the uploaded evidence.'
           fi
-
       - name: Upload evaluation evidence
         if: always()
         uses: actions/upload-artifact@v7

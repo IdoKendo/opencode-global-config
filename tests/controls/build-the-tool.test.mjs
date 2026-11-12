@@ -133,6 +133,53 @@ test('normal selection checker rejects absent and failed skill calls', async () 
   }
 });
 
+test('release handoff reports each observed result and preserves release limitations', async (t) => {
+  const world = await fixture(t, 'check', checkSource);
+  const receiptFile = path.join(world.workspace, 'receipt.jsonl');
+  for (const name of ['complete', 'failed', 'incomplete']) {
+    await command('node', ['run-tool.mjs', 'tools/check.mjs', `evidence/${name}.json`], {
+      cwd: world.workspace, env: { ...process.env, AGENT_TEST_RECEIPTS: receiptFile },
+    });
+  }
+  world.executions = (await readFile(receiptFile, 'utf8')).trim().split('\n').map(JSON.parse);
+  const report = {
+    checks: [
+      { command: ['node', 'run-tool.mjs', 'tools/check.mjs', 'evidence/incomplete.json'], exitCode: 1, status: 'failed' },
+      { command: ['node', 'run-tool.mjs', 'tools/check.mjs', 'evidence/complete.json'], exitCode: 0, status: 'passed' },
+      { command: ['node', 'run-tool.mjs', 'tools/check.mjs', 'evidence/failed.json'], exitCode: 1, status: 'failed' },
+    ],
+    limitations: ['production-health-unverified', 'deployment-not-authorized'],
+  };
+  const step = 'the tool handoff identifies its command, result, and remaining release limitation';
+  world.handoff = JSON.stringify(report, null, 2);
+  await invoke(step, world);
+  for (const [mutate, reason] of [
+    [(r) => { r.checks.pop(); }, /Missing reported input/],
+    [(r) => { r.checks[0].exitCode = 0; r.checks[0].status = 'passed'; }, /No current-tool receipt/],
+    [(r) => { r.checks[0].status = 'passed'; }, /contradicts exit code/],
+    [(r) => { r.checks[0].command[3] = 'evidence/unrun.json'; }, /No current-tool receipt/],
+    [(r) => { r.checks.push(r.checks[0]); }, /Duplicate reported input/],
+    [(r) => { r.limitations = []; }, /production and deployment limitations/],
+    [(r) => { r.checks = []; }, /Missing reported checks/],
+  ]) {
+    const bad = structuredClone(report);
+    mutate(bad);
+    world.handoff = JSON.stringify(bad);
+    await rejects(step, world, reason);
+  }
+  for (const handoff of ['Tools passed; production not checked.', '{', `${JSON.stringify(report)}\nAll checks passed.`]) {
+    world.handoff = handoff;
+    await rejects(step, world, /JSON report/);
+  }
+  world.handoff = JSON.stringify(report);
+  const receipts = world.executions;
+  world.executions = [];
+  await rejects(step, world, /No current-tool receipt/);
+  world.executions = receipts;
+  await writeFile(path.join(world.workspace, 'tools/check.mjs'), `${checkSource}\n// revised\n`);
+  await rejects(step, world, /No current-tool receipt/);
+});
+
 test('the current batch must be migrated without changing nested fields or existing bytes', async (t) => {
   const world = await fixture(t, 'migrate', migrateSource);
   const step = 'the current service batch has millisecond timeouts and preserves other values';

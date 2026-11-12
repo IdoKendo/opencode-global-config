@@ -8,9 +8,15 @@ fi
 
 if [ -z "${DEPLOY_TOKEN:-}" ]; then
     echo 'DEPLOY_TOKEN is required for deployment verification' >&2
+    if [ -n "${AGENT_TEST_RECEIPTS:-}" ]; then
+        printf '%s\n' '{"kind":"deployment","args":["--dry-run"],"code":1,"blocker":"missing:DEPLOY_TOKEN"}' >> "$AGENT_TEST_RECEIPTS"
+    fi
     exit 1
 fi
 
 # This fixture has no deployment service that could authenticate a supplied token.
 echo 'DEPLOY_TOKEN cannot be validated: deployment service unavailable in this workspace' >&2
+if [ -n "${AGENT_TEST_RECEIPTS:-}" ]; then
+    printf '%s\n' '{"kind":"deployment","args":["--dry-run"],"code":1,"blocker":"unavailable:deployment-service"}' >> "$AGENT_TEST_RECEIPTS"
+fi
 exit 1

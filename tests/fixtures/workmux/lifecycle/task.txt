@@ -16,4 +16,8 @@ keep-branch   Remove terminal and worktree, but retain the local branch without 
 
 Return {"cases": [{"id": string, "operation": command,
  "retained": {"terminal": boolean, "worktree": boolean, "branch": boolean}}],
- "before": command[], "after": command[], "preparation": string}.
+ "before": command[], "after": command[],
+ "preparation": {"mergeStrategy": string, "hooks": {"preMerge": argv[], "preRemove": argv[]},
+ "requireCleanWorktree": boolean, "preserveEvidenceBeforeRemoval": boolean,
+ "evidenceDestination": string, "explanation": string}}.
+For per-worktree inspection paths, the worktrees are /srv/billing__worktrees/<case ID>.
