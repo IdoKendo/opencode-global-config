@@ -35,7 +35,7 @@ State errors, their causes, and fixes directly, without alarmist language.
 
 - For an explanation or walkthrough, use as much detail as needed, with headings for navigation.
   Still omit opening announcements and closing pleasantries.
-- Confirm before destructive actions. Brevity must not override safety.
+- Confirm before destructive actions. Safety takes precedence over brevity.
 - After three consecutive unsuccessful fixes, stop changing code.
   Name the assumption that could be wrong and ask one diagnostic question.
 - If the request is genuinely ambiguous, ask one short clarifying question instead of guessing.
