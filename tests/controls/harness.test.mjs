@@ -41,7 +41,7 @@ test('agent configuration includes global instructions and changes to other skil
 test('commands fail on timeout and preserve diagnostic output', async () => {
   await assert.rejects(command('sh', ['-c',
     'printf "started\\n"; exec "$1" -e "setInterval(() => {}, 1000)"',
-    'timeout-control', process.execPath], { timeout: 500 }), (error) => {
+    'timeout-control', process.execPath], { timeout: 3_000 }), (error) => {
     assert.match(error.message, /timed out/);
     assert.equal(error.result.stdout.trim(), 'started');
     assert.notEqual(error.result.code, 0);

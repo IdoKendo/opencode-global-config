@@ -1,4 +1,18 @@
 export const scenarios = {
+  'Distinguish a missing shipping boundary from a receipt logging violation': {
+    fixture: 'review-change/specified',
+    includes: ['review-change/common'],
+    prompt: 'Review the changes against baseline, including staged and unstaged working-tree changes. '
+      + 'Discover the applicable local request and project standards. Review only; do not edit or commit. '
+      + 'Read response-format.md for the final response format.',
+  },
+  'Continue quality review when the original request is unavailable': {
+    fixture: 'review-change/unspecified',
+    includes: ['review-change/common'],
+    prompt: 'Review the changes against baseline, including staged and unstaged working-tree changes. '
+      + 'Discover the applicable local request and project standards. Review only; do not edit or commit. '
+      + 'Read context.md and response-format.md.',
+  },
   'Describe faster evaluation rather than a worker count': {
     fixture: 'write-commit-message/parallel',
     prompt: 'Read change.md and suggest a commit message. Return only one subject line.',
