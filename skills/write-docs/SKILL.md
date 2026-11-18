@@ -48,6 +48,7 @@ description: >-
 ## Output
 - Use Markdown headings, syntax-highlighted code blocks, and Mermaid diagrams where useful.
 - Cite implementation behavior with `file_path:line_number` references in the document.
+  When you document an input restriction, cite the check that enforces it.
   Check that each reference locates the behavior it supports.
 - Briefly explain consequential decisions.
   Report changes, verification, failures, gaps, and next steps.

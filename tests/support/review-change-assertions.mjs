@@ -38,7 +38,7 @@ export function checkQuality(value) {
 export function checkUnavailable(value) {
   assert.equal(value.Requirements.status, 'unavailable');
   assert.deepEqual(value.Requirements.findings, [], 'Do not invent requirements');
-  assert.match(value.Requirements.explanation, /unavailable|missing|cannot|not (?:available|provided|found)|no .*(?:spec|request|ticket|criteria)/i);
+  assert.match(value.Requirements.explanation, /unavailable|missing|cannot|not (?:available|provided|found)|no .*(?:spec|request|ticket|criteria)|\bwithout (?:the |a )?(?:acceptance criteria|requirements|ticket|specification|request)\b/i);
 }
 
 export async function reviewState(world) {

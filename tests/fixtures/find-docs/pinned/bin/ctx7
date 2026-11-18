@@ -1,0 +1,21 @@
+#!/usr/bin/env node
+// Offline, single-topic reference index for the synthetic ParcelQuill collector.
+import { appendFileSync } from 'node:fs';
+const [command, id, ...query] = process.argv.slice(2);
+const base = '/parcelquill/collector';
+if (command === 'library' && /parcelquill/i.test(id) && query.join(' ').trim()) {
+  console.log(`ParcelQuill collector SDK\nLibrary ID: ${base}\nVersions: v2.4, v3.0 (latest)`);
+} else if (command === 'docs' && [base, `${base}/v2.4`, `${base}/v3.0`].includes(id)
+    && query.join(' ').trim()) {
+  const pinned = id.endsWith('/v2.4');
+  const page = `${base}/${pinned ? 'v2.4' : 'v3.0'}/spooling`;
+  console.log(`${page}\n${pinned
+    ? 'Disk spooling: set journal.medium to "volume". journal.limitKiB is the maximum spool size in kibibytes.'
+    : 'Disk spooling: set spool.backend to "disk". spool.capacityBytes is the maximum spool size in bytes.'}`);
+  if (process.env.AGENT_TEST_RECEIPTS) {
+    appendFileSync(process.env.AGENT_TEST_RECEIPTS, JSON.stringify({ page }) + '\n');
+  }
+} else {
+  console.error('Usage: ctx7 library <name> <question> | ctx7 docs <library-id> <question>');
+  process.exitCode = ['--help', '-h'].includes(command) ? 0 : 1;
+}

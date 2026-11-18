@@ -150,6 +150,15 @@ test('editing preserves factual caveats and removes filler', async () => {
     ['it still states that no background timer removes expired entries', 'No background', 'A background', 'match'],
     ['it omits "seamlessly", "obviously", and "simply"', 'CacheBox', 'CacheBox seamlessly', /Retained filler/],
   ]) await control(step, input(valid), input(valid.replace(before, after)), expected);
+  const expiration = 'CacheBox entries expire after 60 seconds.';
+  await control('it still states that no background timer removes expired entries',
+    input('CacheBox clears entries on read instead of using a background timer.'),
+    input('CacheBox uses a background timer instead of clearing entries on read.'), 'match');
+  for (const bad of ['CacheBox entries expire after 90 seconds.',
+    'CacheBox entries do not expire after 60 seconds.', 'CacheBox retries after 60 seconds.']) {
+    await control('the document still names CacheBox and its TTL of 60 seconds',
+      input(expiration), input(bad), 'match');
+  }
   await control('it still states that expiration is handled on the next read',
     input('Expired entries are removed on the next read.'),
     input('Expired entries are not removed on the next read.'), 'match');
@@ -283,6 +292,9 @@ test('retry defaults accept either word order without accepting negation or a st
   const step = '"docs/retries.md" describes the default retry count as 5';
   const input = (text) => ({ docs: { 'docs/retries.md': text } });
   const good = 'The worker uses 5 retry attempts by default (see worker.mjs:15).';
+  const linked = 'The [default retry count](../worker.mjs#L15) is 5.';
+  await control(step, input(linked), input(linked.replace('is 5', 'is not 5')), /default/i);
+  await control(step, input(linked), input('The default is [configurable](version-5).'), /Missing affirmative/);
   for (const bad of [
     'The worker does not use 5 retry attempts by default.',
     'The worker uses 3 retry attempts by default.',

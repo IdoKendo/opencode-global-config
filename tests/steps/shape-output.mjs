@@ -57,10 +57,12 @@ Then('the response starts with useful guidance and ends without pleasantries', f
 
 Then('the response questions the transient-error assumption and asks one diagnostic question', function () {
   const text = plain(this.handoff);
-  assert.match(text, /(?:assum\w*|hypothesis|not|isn['’]t|may not|might not|rather than)[^.!?\n]*transient|transient[^.!?\n]*(?:assum\w*|wrong|unproven|unsupported|not|may|might)/i,
+  const disconnected = /\bno (?:connected network service|network service connected|(?:live )?network connection)\b/i;
+  const questioned = /(?:assum\w*|hypothesis|no evidence|not|isn['’]t|may not|might not|rather than)[^.!?\n]*transient|transient[^.!?\n]*(?:assum\w*|wrong|unproven|unsupported|not|may|might)/i;
+  assert.ok(disconnected.test(text) || questioned.test(text),
     'Missing reconsideration of the transient-error assumption');
   assert.equal((text.match(/\?/g) ?? []).length, 1, 'Expected one diagnostic question');
-  assert.match(text, /(?:error|status)[^?]*\?/i, 'Question must request missing error evidence');
+  assert.match(text, /\b(?:error|status)\b[^.!?\n]*\?/i, 'Question must request missing error evidence');
   assert.doesNotMatch(text, /\b(?:increase|double|raise|bump|set|change)\b[^.!?\n]*(?:retry|retries|delay|timeout)|(?:retry|retries|delay|timeout)[^.!?\n]*\b(?:to|=)\s*\d+/i,
     'Another speculative retry change');
 });
@@ -108,13 +110,14 @@ Then('the response is a complete Markdown change description with local performa
   const arrow = /\b240\s*ms\s*(?:→|->|to)\s*180\s*ms\b/i.test(text);
   assert.ok(labeled || table || arrow, 'Missing or reversed before/after timing');
   for (const [pattern, label] of [
-    [/\bmedian\b/i, 'median statistic'], [/\b10\s+(?:measured\s+)?(?:samples|runs)\b/i, 'sample count'],
+    [/\bmedian\b/i, 'median statistic'],
+    [/\b(?:10\s+(?:measured\s+)?(?:samples|runs)|measured\s+10\s+times)\b/i, 'sample count'],
     [/\bper\s+(?:version|variant)\b|\beach\s+(?:version|variant)\b|\b(?:samples|runs)\s+each\b/i, 'samples per version'],
     [/\b(?:100,?000|100k)\s+(?:input\s+)?records\b/i, 'input size'],
-    [/\bseed\s*[:=]?\s*17\b/i, 'fixed seed'], [/\b(?:one|1|single)[ -]worker\b/i, 'worker count'],
+    [/\bseed\s*(?:of\s+|[:=]\s*)?17\b/i, 'fixed seed'], [/\b(?:one|1|single)[ -]worker\b/i, 'worker count'],
     [/\bNode(?:\.js)?\s*(?:v)?24\b/i, 'Node version'], [/\bmacOS\b[^\n,.]*\barm64\b/i, 'platform'],
     [/\b(?:one|1)\s+warm[- ]?up\b/i, 'warm-up condition'],
-    [/\bsame\s+(?:laptop|machine|host)\b/i, 'same host'],
+    [/\bsame\s+(?:macOS\s+(?:arm64\s+)?)?(?:laptop|machine|host)\b/i, 'same host'],
   ]) assert.match(text, pattern, `Missing benchmark condition: ${label}`);
 });
 

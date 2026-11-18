@@ -4,7 +4,7 @@ Feature: Suggest instruction improvements from authentic conversation history
     Given a history export with ordinary feedback mixed with generated and forked messages
     When the user asks the agent to review the exported history for skill improvements
     Then the history audit selects review-agent-history
-    And only the ordinary release request becomes a new skill suggestion
+    And only the original release request within the message-date window becomes a new skill suggestion
     And the history review leaves the workspace unchanged
 
   Scenario: Compare corrections with current guidance and later reversals

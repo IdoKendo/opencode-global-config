@@ -21,7 +21,7 @@ Then('the commit subject describes faster evaluation', function () {
 
 Then('the commit message does not turn local measurements into CI results', function () {
   const text = message(this);
-  if (/\d/.test(text.replace(/\b39\s+(?:parallel\s+)?(?:Cucumber\s+)?workers?\b/i, ''))) {
+  if (/\d/.test(text.replace(/\b39\s+(?:parallel\s+)?(?:Cucumber\s+)?(?:workers?|scenarios?)\b/gi, ''))) {
     assert.match(text, /local(?:ly)?/i, 'Unqualified local measurement');
     assert.doesNotMatch(text, /(?:CI|GitHub Actions)\s+(?:is\s+)?(?:\d+\s*[x×]|\d+\s+times)/i,
       'Local result claimed for CI');

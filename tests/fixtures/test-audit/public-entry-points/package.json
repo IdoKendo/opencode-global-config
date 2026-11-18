@@ -1,0 +1,8 @@
+{
+  "name": "parcel-units",
+  "exports": {
+    ".": "./units.mjs",
+    "./sdk": "./units.mjs"
+  },
+  "scripts": { "test": "node --test" }
+}

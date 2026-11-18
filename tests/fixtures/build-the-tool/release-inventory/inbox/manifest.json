@@ -1,0 +1,4 @@
+[
+  {"id":"saffron","targets":{"api":"8","worker":"3"}},
+  {"id":"cobalt","targets":{"worker":"3"}}
+]

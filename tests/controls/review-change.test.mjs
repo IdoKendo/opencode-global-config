@@ -70,10 +70,15 @@ test('review requires separate evidence-backed findings on the correct axes', ()
 
 test('unavailable requirements cannot pass, invent findings, or stop quality review', () => {
   checkUnavailable(unavailable);
+  checkUnavailable({ Requirements: { ...unavailable.Requirements,
+    explanation: 'Without acceptance criteria, neither behavior can be judged correct or incorrect.' } });
   checkQuality(unavailable);
+  checkUnavailable({ Requirements: { ...unavailable.Requirements,
+    explanation: 'Without the ticket or acceptance criteria, neither change can be judged.' } });
   reject(checkUnavailable, unavailable, (v) => { v.Requirements.status = 'pass'; });
   reject(checkUnavailable, unavailable, (v) => { v.Requirements.findings = good.Requirements.findings; });
   reject(checkUnavailable, unavailable, (v) => { v.Requirements.explanation = 'All criteria satisfied'; });
+  reject(checkUnavailable, unavailable, (v) => { v.Requirements.explanation = 'Both modules passed without errors.'; });
   reject(checkQuality, unavailable, (v) => { v['Code quality'].status = 'unavailable'; });
 });
 

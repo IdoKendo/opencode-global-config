@@ -17,7 +17,7 @@ npm run test:agents:controls
 npm run test:agents -- --dry-run
 
 # Run live scenarios with a model available to your account.
-AGENT_TEST_MODEL=openai/gpt-6-astra npm run test:agents
+AGENT_TEST_MODEL=openai/gpt-6.2-astra npm run test:agents
 ```
 
 Live runs need OpenCode V2 on `PATH`, authenticated provider access,

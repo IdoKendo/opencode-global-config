@@ -50,6 +50,13 @@ test('history screening rejects synthetic recommendations, duplicate counts, and
   rejectsMutation(checkMixed, mixed, (v) => v.findings.push({ ...release, topic: 'pirate-format' }));
   rejectsMutation(checkMixed, mixed, (v) => { v.findings[0].occurrences = 2; });
   rejectsMutation(checkMixed, mixed, (v) => { v.findings[0].evidence = ['s2/m1']; });
+  rejectsMutation(checkMixed, mixed, (v) => {
+    v.findings.push({ topic: 'rollback-drill', category: 'new-skill', evidence: ['s2/m2'] });
+  });
+  rejectsMutation(checkMixed, mixed, (v) => { v.findings[0].evidence.push('s2/m2'); });
+  rejectsMutation(checkMixed, mixed, (v) => {
+    v.findings[0].proposalRequirements.push({ message: 's2/m2', quote: 'record the recovery time' });
+  });
   rejectsMutation(checkMixed, mixed, (v) => { v.findings[0].proposal = ''; });
   for (const quote of [
     'compare successful deployments',

@@ -1,0 +1,8 @@
+name: Check endpoint
+on: [push, pull_request]
+jobs:
+  endpoint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm run verify:endpoint

@@ -1,0 +1,4 @@
+{
+  "private": true,
+  "scripts": { "verify:endpoint": "node verify-endpoint.mjs" }
+}

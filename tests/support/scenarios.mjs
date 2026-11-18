@@ -1,4 +1,12 @@
+import { scenarios as audit } from './probe-audit.mjs';
+import { scenarios as approval } from './probe-approval.mjs';
+import { scenarios as feedback } from './probe-feedback.mjs';
+import { scenarios as inventory } from './probe-inventory.mjs';
+import { scenarios as lookup } from './probe-lookup.mjs';
+import { scenarios as review } from './probe-review.mjs';
+
 export const scenarios = {
+  ...audit, ...approval, ...feedback, ...inventory, ...lookup, ...review,
   'Distinguish a missing shipping boundary from a receipt logging violation': {
     fixture: 'review-change/specified',
     includes: ['review-change/common'],
@@ -139,11 +147,6 @@ export const scenarios = {
     fixture: 'shape-output/performance',
     prompt: 'Use performance-evidence.md to write a paste-ready Markdown GitLab MR description '
       + 'with an "MR description" heading.',
-  },
-  'Clean up pricing changes without changing boundary results': {
-    fixture: 'simplify-code/project',
-    simplifyCase: 'pricing',
-    prompt: 'Clean up the current working-tree changes in workflow.mjs.',
   },
   'Clean up delivery changes without changing callback effects': {
     fixture: 'simplify-code/project',

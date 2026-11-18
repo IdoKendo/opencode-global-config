@@ -1,0 +1,4 @@
+[
+  {"release":"saffron","unit":"api","revision":"8","verdict":"pass"},
+  {"release":"cobalt","unit":"worker","revision":"3","verdict":"pass"}
+]

@@ -153,7 +153,8 @@ async function guide(world) {
 }
 
 function defaultCount(text, count) {
-  const affirmative = plain(text).split(/[.!?]/)
+  const visible = text.replace(/\[([^\]\n]+)\]\([^()\n]*\)/g, '$1');
+  const affirmative = plain(visible).split(/[.!?]/)
     .filter((sentence) => !/\b(?:not|never|no)\b|n't\b/i.test(sentence)).join('.');
   const pattern = (value) => new RegExp(
     `\\bdefaults?\\b[^.!?]{0,100}\\b${value}\\b|\\b${value}\\b[^.!?]{0,100}\\bby default\\b`, 'i');
@@ -227,7 +228,7 @@ Then('the table, diagram, code block, and URL are unchanged', async function () 
 Then('the document still names CacheBox and its TTL of 60 seconds', async function () {
   const text = plain(await document(this));
   contains(text, 'CacheBox');
-  assert.match(text, /\bTTL\b[^.]{0,40}\b60\s*(?:seconds|s)\b/i);
+  assert.match(text, /(?:\bTTL\b[^.]{0,40}\b|\bentries\s+expire\s+after\s+)60\s*(?:seconds|s)\b/i);
 });
 Then('it still states that expiration is handled on the next read', async function () {
   const affirmative = plain(await document(this))
@@ -237,7 +238,7 @@ Then('it still states that expiration is handled on the next read', async functi
   assert.match(affirmative, /(?:expir\w*|remov\w*)[^.]{0,100}\bnext read\b/i);
 });
 Then('it still states that no background timer removes expired entries', async function () {
-  assert.match(plain(await document(this)), /(?:\b(?:not|no|without)\b[^.]{0,50}background timer|background timer[^.]{0,50}\b(?:does not|doesn't|never)\b)/i);
+  assert.match(plain(await document(this)), /(?:\b(?:not|no|without)\b[^.]{0,50}background timer|\b(?:instead of|rather than) (?:using )?(?:a |the )?background timer|background timer[^.]{0,50}\b(?:does not|doesn't|never)\b)/i);
 });
 Then('it omits {string}, {string}, and {string}', async function (first, second, third) {
   const text = plain(await document(this)).toLowerCase();

@@ -47,6 +47,16 @@ test('archive guidance rejects collapsed, reordered, missing, and invented actio
 test('diagnostic reset rejects another guess or an unfocused question set', async () => {
   const step = 'the response questions the transient-error assumption and asks one diagnostic question';
   const good = 'The transient-network assumption may be wrong. What exact error and status code does the upload return?';
+  const diagnostic = 'Where does the upload error originate: in the simulator or the handler?';
+  for (const evidence of ['The simulator has no connected network service.',
+    'The simulator has no network service connected.', 'The simulator has no live network connection.',
+    'There is no evidence that a transient network error caused this.']) {
+    await rejects(step, `${evidence} ${diagnostic}`, `${evidence} Capture the error.`, /one diagnostic question/);
+  }
+  await rejects(step, good, `The simulator has a connected network service. ${diagnostic}`,
+    /Missing reconsideration/);
+  await rejects(step, good, 'The transient error assumption may be wrong. Is the ticket open?',
+    /missing error evidence/);
   await rejects(step, good, 'What exact error does the upload return?', /Missing reconsideration/);
   await rejects(step, good, good + ' What OS is this?', /one diagnostic question/);
   await rejects(step, good, good.replace('?', '.'), /one diagnostic question/);
@@ -162,6 +172,13 @@ test('change description checker preserves timing direction and benchmark condit
   await invoke(step, { handoff: performance.replace('request-local', 'per-request')
     .replace('macOS arm64', 'macOS (arm64)').replace('10 measured samples', '10 measured runs') });
   await invoke(step, { handoff: `\`\`\`markdown\n${performance.trim()}\n\`\`\`` });
+  const prose = performance.replace('10 measured samples per version', 'Each version was measured 10 times')
+    .replace('fixed seed 17', 'fixed seed of 17')
+    .replace('macOS arm64, same laptop', 'the same macOS arm64 laptop');
+  for (const [before, after, reason] of [
+    ['10 times', '9 times', /sample count/], ['seed of 17', 'seed of 71', /fixed seed/],
+    ['same macOS', 'another macOS', /same host/],
+  ]) await rejects(step, prose, prose.replace(before, after), reason);
   for (const [before, after, reason] of [
     ['Median before: 240 ms; after: 180 ms.', 'Median before: 180 ms; after: 240 ms.', /before\/after timing/],
     ['Median', 'Elapsed', /median statistic/], ['10 measured samples', '5 samples', /sample count/],

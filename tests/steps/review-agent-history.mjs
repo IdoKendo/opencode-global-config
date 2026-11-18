@@ -39,6 +39,11 @@ export function checkMixed(value) {
   assert.equal(finding.category, 'new-skill');
   assert.equal(finding.occurrences, 1, 'Forks are not independent occurrences');
   assert.ok(finding.evidence.includes('s1/m1'), 'Missing original evidence');
+  for (const item of value.findings) {
+    assert.ok(!item.evidence.includes('s2/m2')
+      && !(item.proposalRequirements ?? []).some(({ message }) => message === 's2/m2'),
+    'November feedback is outside the October review');
+  }
   assert.equal(finding.interpretation, 'explicit');
   for (const field of ['quote', 'currentCoverage', 'target', 'proposal', 'benefit', 'confidence']) {
     assert.ok(finding[field]?.trim(), `Missing ${field}`);
@@ -99,7 +104,7 @@ Then('the history audit selects review-agent-history', function () {
   assert.ok(this.tools.some((tool) => tool.name === 'skill'
     && tool.input.id === 'review-agent-history' && tool.status === 'completed'));
 });
-Then('only the ordinary release request becomes a new skill suggestion', function () {
+Then('only the original release request within the message-date window becomes a new skill suggestion', function () {
   checkMixed(report(this.handoff));
 });
 Then('the audit distinguishes covered guidance from a discovery failure and a reversal', function () {
