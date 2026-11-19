@@ -7,6 +7,18 @@ import { scenarios as review } from './probe-review.mjs';
 
 export const scenarios = {
   ...audit, ...approval, ...feedback, ...inventory, ...lookup, ...review,
+  'Ask about the filename collision before changing the exporter': {
+    fixture: 'design-interview/export',
+    prompt: 'Load design-interview by its exact skill ID. Interview me about repeated monthly '
+      + 'ledger exports. The desktop team left its proposals in the repository.',
+  },
+  'End the interview with the copy policy settled and naming still open': {
+    fixture: 'design-interview/export',
+    prompt: 'Load design-interview by its exact skill ID. To close our ledger export interview: '
+      + 'I choose Keep both. A timestamp suffix sounds promising but leave the suffix decision '
+      + 'until next week. Stop here and give me the decision brief. For our tracker, return '
+      + 'JSON with confirmed and open arrays of plain-language decisions and questions.',
+  },
   'Distinguish a missing shipping boundary from a receipt logging violation': {
     fixture: 'review-change/specified',
     includes: ['review-change/common'],
