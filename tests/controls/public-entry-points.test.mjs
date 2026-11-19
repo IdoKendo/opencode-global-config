@@ -7,11 +7,14 @@ test('deduplication must preserve independent protection on each import path', a
   const world = await fixture(t, 'test-audit/public-entry-points');
   const file = 'test/units.test.mjs';
   const original = await world.read(file);
-  await assert.rejects(probeRounding(world), /one 2.25 kg example through root/);
+  await assert.rejects(probeRounding(world), /Repeated example through root/);
   const cleaned = original.slice(0, original.indexOf("test('a fractional"))
     + original.slice(original.indexOf("test('integrations"));
   await world.write(file, cleaned);
   await probeRounding(world);
+  await world.write(file, cleaned.replaceAll('2.25', '2.5'));
+  await probeRounding(world);
+  await world.write(file, cleaned);
   for (const [entry, invocation] of [['sdk', 'sdkWeight'], ['root', 'billableKg']]) {
     await probeRounding(world, entry);
     // Still calls through the public path, but can no longer detect a wrong result.

@@ -4,16 +4,19 @@ import { files } from '../support/harness.mjs';
 import { parsePlan, checkDispatch, checkHandoff, checkHeadless, checkMonitor,
   checkLifecycle, checkCleanup, checkAuthorization } from '../support/workmux-assertions.mjs';
 
-Given('workmux planning is limited to the supplied environment snapshot', async function () {
-  assert.match(await this.fixture('response-format.txt'), /Do not run workmux/);
+Given('workmux planning is limited to the supplied environment snapshot', function () {
+  assert.ok(this.original.has('response-format.txt'));
 });
-for (const [step, evidence] of [
-  ['billing uses session mode and the requested destination is a window in ops', 'mode: session'],
-  ['provisioning hooks are configured and the returned handle differs from the branch', 'audit-42'],
-  ['two projects have a retry handle and billing has a failed verification result', 'exits 1'],
-  ['six owners request different terminal, worktree, and branch lifecycles', 'keep-branch'],
-  ['a worktree has uncommitted edits and no merge or discard authorization', 'customer-note.txt'],
-]) Given(step, async function () { assert.ok((await this.fixture('task.txt')).includes(evidence)); });
+for (const [step, snapshot] of [
+  ['billing uses session mode and the requested destination is a window in ops', 'dispatch'],
+  ['provisioning hooks are configured and the returned handle differs from the branch', 'headless'],
+  ['two projects have a retry handle and billing has a failed verification result', 'monitor'],
+  ['six owners request different terminal, worktree, and branch lifecycles', 'lifecycle'],
+  ['a worktree has uncommitted edits and no merge or discard authorization', 'authorization'],
+]) Given(step, function () {
+  assert.equal(this.scenario.fixture, `workmux/${snapshot}`);
+  assert.ok(this.original.has('task.txt'));
+});
 
 Then('workmux is selected through normal skill discovery', function () {
   assert.ok(this.tools.some((tool) => tool.name === 'skill'

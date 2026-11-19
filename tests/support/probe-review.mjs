@@ -12,9 +12,10 @@ export function card(text) {
   return JSON.parse(text.trim().replace(/^```(?:json)?\s*\n([\s\S]*?)\n```$/i, '$1'));
 }
 
-export function branchScope(report, base) {
-  assert.match(report.baseline, /^[a-f0-9]{7,40}$/);
-  assert.ok(base.startsWith(report.baseline), 'Review must start at the branch point');
+export async function branchScope(report, world) {
+  assert.match(report.baseline, /^[a-f0-9]{4,64}$/i);
+  const resolved = await world.git(['rev-parse', '--verify', `${report.baseline}^{commit}`]);
+  assert.equal(resolved, world.offerBase, 'Review must start at the branch point');
   assert.deepEqual(report.changedFiles, ['shipping.mjs']);
 }
 

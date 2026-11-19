@@ -20,3 +20,10 @@ Return only JSON (an optional JSON code fence is fine):
 }
 
 Use one of the listed status values. Include only justified findings.
+Use the source's repository-relative path, optionally followed by a line or
+line range. For incorrect fees, include `subtotalCents`, `expectedFeeCents`,
+and `actualFeeCents` on the finding. For event-routing violations, include
+`expectedCall` and `actualCall` (receiver.method identifiers from the baseline
+and change). When requirements are unavailable, include `limitation` on the
+Requirements result with `source` (relative path) and `quote` (verbatim
+sentence from the review context explaining the limitation).

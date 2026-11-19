@@ -1,0 +1,4 @@
+Return one JSON object without fences or surrounding prose, with a drift array for
+unrelated documentation errors. For a command whose executable does not exist,
+report its guide (file), documented executable (command), and kind "missing-file".
+Use project-relative paths. Report only problems you found.

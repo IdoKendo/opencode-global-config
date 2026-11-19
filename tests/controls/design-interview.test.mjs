@@ -16,26 +16,26 @@ async function invoke(text, world) {
 }
 
 test('distinguish a collision decision from re-asking settled facts or a questionnaire', async () => {
-  const ask = (handoff) => invoke('the agent asks one question about handling the existing file', { handoff });
-  await ask('When May is exported twice, should we replace the existing file or keep both?');
-  await ask('Replace would overwrite May; Keep both would create another copy. Which do you prefer?');
-  for (const reply of [
-    'Replace or keep both? Which format should we use?',
-    'We can replace or keep both. Which folder should receive the existing file?',
-    'We can replace or keep both. What is your deadline?',
-    'We should replace the existing file rather than keep both.',
-  ]) await assert.rejects(ask(reply), assert.AssertionError);
+  const ask = (...questions) => invoke('the agent asks one question about handling the existing file',
+    { handoff: JSON.stringify({ questions }) });
+  const collision = { field: 'collisionPolicy', choices: ['Replace', 'Keep both'] };
+  const folder = { field: 'destination', choices: ['Downloads', 'Desktop'] };
+  await ask(collision);
+  for (const questions of [[], [folder], [collision, folder], [{ ...collision, choices: ['Replace'] }]]) {
+    await assert.rejects(ask(...questions), assert.AssertionError);
+  }
 });
 
 test('a tentative timestamp cannot become a confirmed decision', async () => {
   const brief = (confirmed, open) => invoke('the brief confirms Keep both and leaves the suffix undecided',
     { handoff: JSON.stringify({ confirmed, open }) });
-  await brief(['Keep both exports'], ['Which suffix should the second file use?']);
+  const both = { field: 'collisionPolicy', value: 'Keep both' };
+  await brief([both], ['suffix']);
   for (const [confirmed, open] of [
-    [['Use a timestamp suffix'], ['Whether to keep both']],
-    [['Keep both with a timestamp suffix'], ['Suffix formatting']],
-    [['Keep both exports'], []],
-    [['Keep both exports'], ['Whether to keep both', 'Suffix']],
+    [[{ ...both, value: 'Replace' }], ['suffix']],
+    [[both, { field: 'suffix', value: 'timestamp' }], ['suffix']],
+    [[both], []],
+    [[both], ['collisionPolicy', 'suffix']],
   ]) await assert.rejects(brief(confirmed, open), assert.AssertionError);
 });
 

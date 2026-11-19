@@ -56,6 +56,9 @@ test('retained checkout tests kill a paid-delivery bug; assertion-free probes do
   const world = await fixture(t);
   await invoke(paid, world);
   await writeFile(path.join(world.workspace, 'tests/checkout.test.mjs'), imports
+    + "test('checkout totals', () => { assert.equal(checkoutTotal(49), 54); assert.equal(checkoutTotal(51), 51); });\n");
+  await invoke(paid, world);
+  await writeFile(path.join(world.workspace, 'tests/checkout.test.mjs'), imports
     + "test('paid', () => { checkoutTotal(49); });\n"
     + "test('free', () => { checkoutTotal(51); });\n");
   await rejects(paid, world, /Shipping mutation survived/);

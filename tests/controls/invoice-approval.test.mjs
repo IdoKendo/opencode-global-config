@@ -15,6 +15,15 @@ test('a rejection through the wrong guard misses the regression; an authorized r
   await world.write(file, repaired);
   for (const version of ['correct', 'regressed', 'reordered']) await probeApproval(world, version);
 
+  await world.write(file, original + `
+test('repeat approval', () => {
+  const posted = approve({ status: 'pending' }, accountant);
+  try { approve(posted, accountant); } catch { return; }
+  throw new TypeError('crashed after unexpected success');
+});`);
+  await probeApproval(world, 'correct');
+  await assert.rejects(probeApproval(world, 'regressed'), /must fail an assertion/);
+
   // This detects the mutant but also demands a private predicate name.
   await world.write(file, repaired + `
 import { readFileSync } from 'node:fs';

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { files } from './harness.mjs';
 
 export function reviewReport(text) {
@@ -15,36 +16,43 @@ export function reviewReport(text) {
 export function checkRequirements(value) {
   const result = value.Requirements;
   assert.equal(result.status, 'findings');
-  const finding = result.findings.find((item) => item.file === 'shipping.mjs');
+  const finding = result.findings.find((item) => item.file === 'shipping.mjs' && item.subtotalCents === 5000);
   assert.ok(finding, 'Missing shipping requirement finding');
-  assert.ok([2].includes(finding.line), 'Finding must locate the changed condition');
-  assert.match(finding.source, /request\.md/);
-  assert.match(finding.detail, /5000|5,000|50(?:\.00)?/);
-  assert.match(finding.detail, /exact|equal|boundary|threshold|inclusiv|>=/i);
-  assert.match(finding.detail, /500|5(?:\.00)?|charg|paid|fee/i);
+  assert.equal(finding.line, 2);
+  assert.match(finding.source, /^request\.md(?:(?::|#)L?(?:3(?:[-–]L?4)?|4))?$/);
+  assert.ok(finding.detail?.trim());
+  assert.equal(finding.expectedFeeCents, 0);
+  assert.equal(finding.actualFeeCents, 500);
 }
 
 export function checkQuality(value) {
   const result = value['Code quality'];
   assert.equal(result.status, 'findings');
-  const finding = result.findings.find((item) => item.file === 'receipt.mjs');
+  const finding = result.findings.find((item) => item.file === 'receipt.mjs' && item.actualCall === 'console.log');
   assert.ok(finding, 'Quality review must continue and identify logging violation');
   assert.equal(finding.line, 2);
-  assert.match(finding.source, /AGENTS\.md/);
-  assert.match(finding.detail, /console/i);
-  assert.match(finding.detail, /logger|structured|collector/i);
+  assert.match(finding.source, /^AGENTS\.md(?:(?::|#)L?(?:3(?:[-–]L?4)?|4))?$/);
+  assert.ok(finding.detail?.trim());
+  assert.equal(finding.expectedCall, 'logger.info');
 }
 
 export function checkUnavailable(value) {
   assert.equal(value.Requirements.status, 'unavailable');
   assert.deepEqual(value.Requirements.findings, [], 'Do not invent requirements');
-  assert.match(value.Requirements.explanation, /unavailable|missing|cannot|not (?:available|provided|found)|no .*(?:spec|request|ticket|criteria)|\bwithout (?:the |a )?(?:acceptance criteria|requirements|ticket|specification|request)\b/i);
+  const limitation = value.Requirements.limitation;
+  assert.equal(limitation?.source, 'context.md');
+  const context = readFileSync(new URL('../fixtures/review-change/unspecified/context.md', import.meta.url), 'utf8');
+  const evidence = context.split('\n\n')[1].replace(/\s+/g, ' ').trim();
+  const quote = limitation.quote?.replace(/\s+/g, ' ').trim();
+  assert.ok(quote === evidence || evidence.match(/[^.]+\./g).some((sentence) => sentence.trim() === quote),
+    'Cite the unavailable ticket or absence of a local substitute');
 }
 
 export async function reviewState(world) {
   return {
     files: await files(world.workspace),
     head: await world.git(['rev-parse', 'HEAD']),
+    branch: await world.git(['branch', '--show-current']),
     index: await world.git(['ls-files', '--stage']),
     status: await world.git(['status', '--porcelain=v1', '--untracked-files=all']),
     refs: await world.git(['show-ref']),

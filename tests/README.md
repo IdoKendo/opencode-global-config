@@ -49,6 +49,12 @@ Use Node.js for executable fixtures and checks. Do not add another language runt
    Keep expected outcomes out of the agent prompt.
 4. Add positive and negative controls for new assertions, then run the relevant checks.
 
+Check the outcome at its source: run the changed code, inspect the file or Git state, or compare
+the reported measurement with the fixture. A requested JSON field is a format contract; its
+presence does not make its value correct. For prose, include a passing paraphrase and a failing
+answer that uses the expected terms but makes the wrong claim. Match exact text only when the
+spelling, command, or format is part of the requirement.
+
 ## Runtime and evidence
 
 The [harness](support/harness.mjs) defines configuration, environment settings, execution, and

@@ -1,0 +1,5 @@
+Return one JSON object without fences or surrounding prose. Report the edited file
+as "edited" and the implementation evidence you used as "evidence". For a source
+inspection, use {"source":"project-relative file path","line":N}, where N is the
+line defining the default. For a runtime check, use {"command":["program","arg",...]},
+with the actual argv you ran, using project-relative paths.

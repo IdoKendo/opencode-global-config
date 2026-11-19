@@ -30,7 +30,7 @@ export async function prepareOffer() {
 Given('release advanced after shipping-offer branched and a local edit fixes the offer', prepareOffer);
 
 Then('the review attributes only the shipping change to the branch since divergence', function () {
-  branchScope(card(this.handoff), this.offerBase);
+  return branchScope(card(this.handoff), this);
 });
 
 Then('the review reports that a qualifying order of 5000 cents still costs 500 cents to ship', function () {

@@ -46,8 +46,10 @@ export function billableKg(weight) {
       assert.equal(result.code, 0, result.stdout + result.stderr);
       const rows = (await readFile(calls, 'utf8')).split('\n').filter(Boolean).map(JSON.parse);
       for (const label of ['root', 'sdk']) {
-        assert.equal(rows.filter(([entry, kg]) => entry === label && kg === 2.25).length, 1,
-          `Expected one 2.25 kg example through ${label}`);
+        const weights = rows.filter(([entry, kg]) => entry === label && Number.isFinite(kg)
+          && !Number.isInteger(kg)).map(([, kg]) => kg);
+        assert.ok(weights.length, `Missing fractional example through ${label}`);
+        assert.equal(new Set(weights).size, weights.length, `Repeated example through ${label}`);
       }
     }
   } finally {

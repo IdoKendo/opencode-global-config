@@ -4,6 +4,7 @@ import path from 'node:path';
 import { Given, Then } from '@cucumber/cucumber';
 import ts from 'typescript';
 import { files } from '../support/harness.mjs';
+import { statements } from '../support/tool-trace.mjs';
 
 const normalize = (text) => text.replace(/\s+/g, ' ').trim();
 const plain = (text) => normalize(text.replace(/[`*_]/g, ''));
@@ -11,10 +12,14 @@ const contains = (text, expected) => assert.ok(text.includes(expected), `Missing
 const original = (world, file) => world.fixture(file);
 const document = (world) => world.read('document.md');
 const output = (value) => typeof value === 'string' ? value : JSON.stringify(value ?? '');
-function verificationReport(world) {
+function handoffReport(world) {
   let report;
   try { report = JSON.parse(world.handoff); } catch { assert.fail('Handoff must be a JSON report'); }
   assert.ok(report && typeof report === 'object' && !Array.isArray(report), 'Missing handoff report');
+  return report;
+}
+function verificationReport(world) {
+  const report = handoffReport(world);
   assert.deepEqual(Object.keys(report), ['checks'], 'Unexpected report fields');
   assert.ok(Array.isArray(report.checks) && report.checks.length > 0, 'Missing reported checks');
   const seen = new Set();
@@ -108,6 +113,11 @@ function fences(text) {
   return result;
 }
 
+function hasCommand(blocks, command) {
+  return blocks.some(({ lines }) => lines.slice(1, -1).some((line) =>
+    line.trim().replace(/^\$\s+/, '').replace(/\s+#.*$/, '').split(/\s+/).join(' ') === command));
+}
+
 function protectedParts(text) {
   const blocks = fences(text).map((block) => block.text);
   let outside = text;
@@ -154,12 +164,13 @@ async function guide(world) {
 
 function defaultCount(text, count) {
   const visible = text.replace(/\[([^\]\n]+)\]\([^()\n]*\)/g, '$1');
-  const affirmative = plain(visible).split(/[.!?]/)
-    .filter((sentence) => !/\b(?:not|never|no)\b|n't\b/i.test(sentence)).join('.');
-  const pattern = (value) => new RegExp(
-    `\\bdefaults?\\b[^.!?]{0,100}\\b${value}\\b|\\b${value}\\b[^.!?]{0,100}\\bby default\\b`, 'i');
-  assert.match(affirmative, pattern(count), `Missing affirmative default of ${count}`);
-  if (count === 5) assert.doesNotMatch(affirmative, pattern(3), 'Retained stale default of 3');
+  const clauses = plain(visible).split(/[.!?;,]|\bbut\b/i)
+    .filter((clause) => !/\b(?:not|never|no)\b|n['’]t\b/i.test(clause));
+  const counts = clauses.flatMap((clause) => [...clause.matchAll(
+    /\bdefaults?\b[^\d.!?;]{0,70}\b(\d+)\b|\b(\d+)(?:\s+(?:retry|retries|attempts?|times))*\s+by default\b/gi,
+  )].map((match) => Number(match[1] ?? match[2])));
+  assert.ok(counts.includes(count), `Missing affirmative default of ${count}`);
+  assert.ok(counts.every((value) => value === count), `Conflicting default; expected ${count}`);
 }
 
 async function workerRun(world, command, expectedCode, expectedOutput) {
@@ -228,11 +239,12 @@ Then('the table, diagram, code block, and URL are unchanged', async function () 
 Then('the document still names CacheBox and its TTL of 60 seconds', async function () {
   const text = plain(await document(this));
   contains(text, 'CacheBox');
-  assert.match(text, /(?:\bTTL\b[^.]{0,40}\b|\bentries\s+expire\s+after\s+)60\s*(?:seconds|s)\b/i);
+  const claims = text.split(/[.!?;]/).filter((claim) => !/\b(?:not|never)\b/i.test(claim));
+  assert.match(claims.join('.'), /(?:\bTTL\b[^.]{0,40}\b|\bentries\s+expire\s+after\s+)60\s*(?:seconds|s)\b/i);
 });
 Then('it still states that expiration is handled on the next read', async function () {
   const affirmative = plain(await document(this))
-    .replace(/,\s*not\s+(?:(?:by|through)\s+)?(?:a\s+)?background timer/gi, '')
+    .replace(/,\s*not\s+(?:(?:by|through|on)\s+)?(?:a\s+)?background timer/gi, '')
     .split(/[.!?]/)
     .filter((sentence) => !/\b(?:not|never|no)\b|n't\b/i.test(sentence)).join('.');
   assert.match(affirmative, /(?:expir\w*|remov\w*)[^.]{0,100}\bnext read\b/i);
@@ -284,7 +296,7 @@ Then('it explains the positive-integer restriction before giving examples', asyn
 });
 Then('it includes examples with {string} and {string}', async function (first, second) {
   const blocks = fences(await guide(this));
-  for (const example of [first, second]) assert.ok(blocks.some((block) => block.text.includes(example)));
+  for (const example of [first, second]) assert.ok(hasCommand(blocks, `node worker.mjs ${example}`));
 });
 Then('the zero-attempt example documents the error {string}', async function (error) {
   const text = await guide(this);
@@ -384,9 +396,9 @@ Then('{string} is unchanged', async function (file) {
   assert.equal(await this.read(file), await original(this, file));
 });
 Then('the handoff identifies the removed installer command in {string} as drift', function (file) {
-  contains(this.handoff, file);
-  contains(this.handoff, 'install-worker.sh');
-  assert.match(this.handoff, /missing|removed|absent|does not exist|nonexistent|stale|outdated|drift|unavailable/i);
+  const { drift } = handoffReport(this);
+  assert.ok(Array.isArray(drift) && drift.some((entry) => entry?.file === file
+    && entry.command === './install-worker.sh' && entry.kind === 'missing-file'), 'Missing installer drift record');
 });
 
 Given('{string} recommends {string}', async function (file, command) {
@@ -400,8 +412,7 @@ Given('the implementation accepts {string}', async function (command) {
 });
 Then('the guide recommends {string}', async function (command) {
   const text = await this.read('docs/usage.md');
-  contains(text, command);
-  assert.ok(fences(text).some((block) => block.text.includes(command)));
+  assert.ok(hasCommand(fences(text), command), `Missing runnable example: ${command}`);
   for (const block of fences(text)) assert.doesNotMatch(block.text, /node\s+worker\.mjs\b[^\n]*--retry\b/);
   assert.doesNotMatch(text, /(?:choose|set|configure)[^.\n]{0,80}\bwith\s+`?--retry\b/i);
 });
@@ -446,9 +457,11 @@ Then('{string} describes the default retry count as 5', async function (file) {
 });
 Then('the agent does not ask for confirmation before editing', async function () {
   assert.notEqual(await this.read('docs/retries.md'), await original(this, 'docs/retries.md'));
-  assert.ok(!this.tools.some((tool) => /question|confirm|approval/i.test(tool.name)), 'Agent requested confirmation');
-  const text = `${this.handoff}\n${output(this.agentEvents)}`;
-  assert.doesNotMatch(text, /(?:shall|should|may|can) I (?:proceed|edit|update|change)|(?:would you like|do you want) me to (?:proceed|edit|update)|(?:please confirm|need your (?:approval|confirmation))/i);
+  const firstEdit = this.tools.findIndex((tool) => /(?:^|[._])(?:apply_patch|patch|write|edit)$/.test(tool.name)
+    && tool.status === 'completed' && output(tool.input).includes('docs/retries.md'));
+  const beforeEdit = firstEdit < 0 ? this.tools : this.tools.slice(0, firstEdit);
+  assert.ok(!beforeEdit.some((tool) => /(?:^|[._])(?:question|confirm|approval)$/.test(tool.name)),
+    'Agent requested confirmation');
 });
 Then('the Git index remains empty', async function () {
   assert.equal((await this.git(['diff', '--cached', '--name-only'])).trim(), '');
@@ -457,16 +470,28 @@ Then('the Git index remains empty', async function () {
 Then('the Git HEAD is unchanged', async function () {
   assert.equal((await this.git(['rev-parse', 'HEAD'])).trim(), this.beforeHead.trim());
 });
-Then('the handoff identifies the edited file and the implementation evidence checked', function () {
-  contains(this.handoff, 'docs/retries.md');
-  assert.ok(this.handoff.includes('worker.mjs')
-    || /\bworker(?:['’]s)?\s+(?:default\s+)?output\b/i.test(this.handoff),
-  'Missing implementation source or worker-output reference');
-  assert.match(this.handoff, /\b5\b/);
-  assert.match(this.handoff, /read|inspect|check|verif|confirm|default|source|implementation/i);
-  assert.ok(this.tools.some((tool) => /worker\.mjs/.test(output(tool.input))
-    && /\battempts\s*=\s*5n\b|Retry attempts: 5/.test(output(tool.output))
-    && !/error|fail|cancel/i.test(tool.status ?? '')), 'Missing recorded implementation evidence');
+Then('the handoff identifies the edited file and the implementation evidence checked', async function () {
+  const { edited, evidence } = handoffReport(this);
+  assert.equal(edited, 'docs/retries.md', 'Wrong edited file');
+  if (Array.isArray(evidence?.command)) {
+    assert.deepEqual(evidence.command.map((arg) => arg === './worker.mjs' ? 'worker.mjs' : arg),
+      ['node', 'worker.mjs'], 'Wrong default check');
+    assert.ok(this.executions.some(({ args, code, kind }) => !kind && code === 0 && args?.length === 0),
+      'Missing default execution receipt');
+    return;
+  }
+  assert.equal(evidence?.source, 'worker.mjs', 'Missing implementation source');
+  const line = (await this.read('worker.mjs')).split('\n')[evidence.line - 1]?.trim();
+  assert.ok(Number.isInteger(evidence.line) && /\battempts\s*=\s*5n\b/.test(line), 'Wrong default source line');
+  const readDefault = this.tools.some((tool) => {
+    const file = tool.input?.path ?? tool.input?.filePath;
+    const readsWorker = /(?:^|[._])(?:read|grep)$/.test(tool.name) && typeof file === 'string'
+      && path.resolve(this.workspace, file) === path.join(this.workspace, 'worker.mjs');
+    const listsWorker = statements(tool).some((statement) =>
+      /^(?:cat|nl(?: -ba)?) (?:\.\/)?worker\.mjs$/.test(statement));
+    return tool.status === 'completed' && (readsWorker || listsWorker) && output(tool.output).includes(line);
+  });
+  assert.ok(readDefault, 'Missing recorded implementation evidence');
 });
 
 async function suiteDocuments(world) {

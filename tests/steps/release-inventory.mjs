@@ -34,7 +34,7 @@ const manifest = [
 const submissions = [
   ['ash', 'ledger', 'b', 'pass'], ['ash', 'index', 'c', 'pass'], ['ash', 'other', 'a', 'fail'],
   ['elm', 'ledger', 'b', 'pass'], ['elm', 'index', 'a', 'pass'],
-  ['fir', 'ledger', 'b', 'fail'], ['unlisted', 'ledger', 'b', 'pass'],
+  ['fir', 'ledger', 'b', 'fail'], ['fir', 'other', 'b', 'pass'], ['unlisted', 'ledger', 'b', 'pass'],
 ].map(([release, unit, revision, verdict]) => ({ release, unit, revision, verdict }));
 const decisions = { ash: 'ready', elm: 'blocked', fir: 'blocked', oak: 'blocked', yew: 'blocked' };
 

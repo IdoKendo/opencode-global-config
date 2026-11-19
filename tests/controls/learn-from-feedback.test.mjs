@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { loadConfiguration, loadSupport } from '@cucumber/cucumber/api';
 
@@ -8,10 +9,12 @@ const { runConfiguration } = await loadConfiguration({ file: false, provided: {
   import: [fileURLToPath(new URL('../steps/learn-from-feedback.mjs', import.meta.url))],
 } });
 const support = await loadSupport(runConfiguration);
+const read = (name) => readFile(new URL(`../fixtures/learn-from-feedback/${
+  name === 'review.md' ? 'judgment' : 'lint'}/${name}`, import.meta.url), 'utf8');
 async function invoke(text, world) {
   const matches = support.stepDefinitions.filter((step) => step.matchesStepName(text));
   assert.equal(matches.length, 1);
-  return matches[0].code.call(world);
+  return matches[0].code.call({ read, ...world });
 }
 
 const lint = { action: 'configure-tool', target: 'eslint.config.mjs', deferUntilRepeated: false,
@@ -58,6 +61,7 @@ const cases = [
     (v) => { v.retainedRequirements = []; },
     (v) => { v.retainedRequirements[0].value = 30; },
     (v) => { v.retainedRequirements[0].unit = 'milliseconds'; },
+    (v) => { v.retainedRequirements.push({ ...v.retainedRequirements[0], value: 30 }); },
   ]],
 ];
 
@@ -91,6 +95,6 @@ test('discovery requires successful selection of the intended skill', async () =
   await invoke(step, { tools: [selected] });
   for (const tools of [[], [{ ...selected, status: 'error' }],
     [{ ...selected, input: { id: 'build-the-tool' } }]]) {
-    await assert.rejects(() => invoke(step, { tools }), /Missing successful/);
+    await assert.rejects(() => invoke(step, { tools }), assert.AssertionError);
   }
 });

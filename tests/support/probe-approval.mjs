@@ -36,7 +36,7 @@ export async function probeApproval(world, version) {
       { cwd: world.workspace, env });
     if (version === 'regressed') {
       assert.equal(result.code, 1, 'repeat-approval regression survived');
-      assert.match(result.stdout, /^not ok /m, result.stdout + result.stderr);
+      assert.match(result.stdout, /code: 'ERR_ASSERTION'/, 'repeat regression must fail an assertion');
     } else {
       assert.equal(result.code, 0, `${version} approval failed:\n${result.stdout}${result.stderr}`);
     }

@@ -7,7 +7,9 @@ export const selected = (tools, id) => tools.some((tool) => /(?:^|[._])skill$/.t
 export function statements(tool) {
   if (!/(?:^|[._])(?:shell|bash)$/.test(tool.name)) return [];
   const prefix = /^(?:(?:command|exec)\s+|(?:\S*\/)?env(?:\s+(?:-i|--ignore-environment))*\s+|[A-Za-z_]\w*=(?:"[^"]*"|'[^']*'|\S*)\s+)/;
-  return (tool.input?.command ?? '').split(/&&|\|\||[;\n]/)
+  // Separators inside a quoted argument (for example a printed usage example)
+  // are part of that argument, not the beginning of another command.
+  return ((tool.input?.command ?? '').match(/(?:"(?:\\[\s\S]|[^"\\])*"|'[^']*'|\\[\s\S]|[^&|;\n"'\\])+/g) ?? [])
     .map((line) => {
       let statement = line.trim();
       while (prefix.test(statement)) statement = statement.replace(prefix, '');

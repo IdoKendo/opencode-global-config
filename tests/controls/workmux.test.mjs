@@ -63,6 +63,7 @@ test('headless planning rejects mux options and guessed identities or working di
   for (const option of ['--headless', '--json']) {
     reject(checkHeadless, headless, (v) => { v.create.argv = v.create.argv.filter((a) => a !== option); });
   }
+  reject(checkHeadless, headless, (v) => { v.create.argv[v.create.argv.indexOf('--headless')] = '--no-window'; });
   for (const option of ['--prompt', '--background', '--parent-session', '--mode', '--wait']) {
     reject(checkHeadless, headless, (v) => { v.create.argv.push(option, 'x'); });
   }
@@ -85,6 +86,10 @@ const monitor = { commands: [cmd('status', 'billing:retry'), cmd('capture', 'bil
   observed: { agentStatus: 'done', verificationExitCode: 1, diffReviewed: false },
 };
 test('monitoring rejects ambiguous targets, polling, unbounded waits, and false completion', () => {
+  const reordered = structuredClone(monitor);
+  reordered.commands[1] = cmd('capture', '-n', '100', 'billing:retry');
+  reordered.commands[3] = cmd('wait', '--timeout=300', 'billing:retry');
+  checkMonitor(reordered);
   reject(checkMonitor, monitor, (v) => { v.commands[0].argv[2] = 'retry'; });
   reject(checkMonitor, monitor, (v) => { v.commands.push(cmd('status', 'billing:retry')); });
   reject(checkMonitor, monitor, (v) => { v.commands[3].argv = ['workmux', 'wait', 'billing:retry']; });
@@ -133,14 +138,26 @@ test('lifecycle checks reject wrong retention, implicit targets, default cleanup
       reject(checkLifecycle, lifecycle, (v) => { v.cases[index].retained[resource] = !v.cases[index].retained[resource]; });
     }
   }
-  for (const index of [2, 3, 5]) {
+  const configuredKeep = structuredClone(lifecycle);
+  configuredKeep.cases[2].operation.argv = ['workmux', 'merge', '--into=release/2026', 'merge-keep'];
+  checkLifecycle(configuredKeep);
+  reject(checkLifecycle, configuredKeep, (v) => { v.cases[2].operation.argv.push('--cleanup'); });
+  reject(checkLifecycle, lifecycle, (v) => { v.cases[3].operation.argv.splice(-1, 1, '--no-keep'); });
+  for (const index of [3, 5]) {
     reject(checkLifecycle, lifecycle, (v) => { v.cases[index].operation.argv.pop(); });
   }
   reject(checkLifecycle, lifecycle, (v) => { v.cases[3].operation.argv.push('--no-hooks'); });
   reject(checkLifecycle, lifecycle, (v) => { v.cases[4].operation.argv.push('--keep-branch'); });
+  reject(checkLifecycle, lifecycle, (v) => { v.cases[4].operation.argv.push('unrelated-worktree'); });
   reject(checkLifecycle, lifecycle, (v) => { v.cases.pop(); });
 });
 test('cleanup requires before and after checks plus evidence and hook preparation', () => {
+  const fromParent = structuredClone(lifecycle);
+  fromParent.before = fromParent.before.map(({ cwd }) =>
+    ({ cwd: '/srv/billing', argv: ['git', '-C', cwd, 'status', '--porcelain'] }));
+  checkCleanup(fromParent);
+  reject(checkCleanup, fromParent, (v) => { v.before[0].argv[2] = '/srv/catalog'; });
+  reject(checkCleanup, lifecycle, (v) => { v.before[0].argv.push('-uno'); });
   reject(checkCleanup, lifecycle, (v) => { v.before = []; });
   reject(checkCleanup, lifecycle, (v) => { v.after = []; });
   reject(checkCleanup, lifecycle, (v) => { v.before.pop(); });

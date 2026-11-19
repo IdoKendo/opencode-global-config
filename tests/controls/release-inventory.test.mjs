@@ -40,19 +40,19 @@ test('inventory rejects the green table and a fix specific to the inbox', async 
   await assert.rejects(step(w, current), assert.AssertionError);
   await w.write('desk.mjs', `console.log('{"cobalt":"ready","saffron":"blocked"}')`);
   await step(w, current);
-  await assert.rejects(step(w, heldOut), /Held-out release decisions/);
+  await assert.rejects(step(w, heldOut), assert.AssertionError);
   await w.write('desk.mjs', reference);
   for (const name of [current, heldOut, revision]) await step(w, name);
 });
 
 test('inventory rejects partial joins, vacuous approval and frozen revision decisions', async t => {
   const w = await fixture(t, 'build-the-tool/release-inventory');
-  for (const predicate of ['r.release === id && ', 'r.revision === rev && ', " && r.verdict === 'pass'",
+  for (const predicate of ['r.release === id && ', 'r.unit === unit && ', 'r.revision === rev && ', " && r.verdict === 'pass'",
     'required.length > 0 && ']) {
     await w.write('desk.mjs', reference.replace(predicate, ''));
-    await assert.rejects(step(w, heldOut), /Held-out release decisions/, predicate);
+    await assert.rejects(step(w, heldOut), assert.AssertionError, predicate);
   }
   await w.write('desk.mjs', reference.replace('r.revision === rev', "r.revision === (unit === 'index' ? 'c' : rev)"));
   await step(w, heldOut);
-  await assert.rejects(step(w, revision), /Revised packing list/);
+  await assert.rejects(step(w, revision), assert.AssertionError);
 });

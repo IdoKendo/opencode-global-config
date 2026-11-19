@@ -2,7 +2,10 @@ import assert from 'node:assert/strict';
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { Given, Then } from '@cucumber/cucumber';
-import { command, files, testRoot } from '../support/harness.mjs';
+import ts from 'typescript';
+import { command, testRoot } from '../support/harness.mjs';
+import { selected } from '../support/tool-trace.mjs';
+import { onlyChanges } from '../support/workspace.mjs';
 
 async function probe(world, mode) {
   const result = await command(process.execPath, [path.join(testRoot, 'support/simplify-code-probe.mjs'),
@@ -29,8 +32,7 @@ Given(/^uncommitted (pricing|delivery) changes with redundant nested branches$/,
 });
 
 Then('the agent selects the simplify-code skill normally', function () {
-  assert.ok(this.tools.some(({ name, input, status }) => name === 'skill'
-    && (input.id ?? input.name) === 'simplify-code' && status === 'completed'),
+  assert.ok(selected(this.tools, 'simplify-code'),
   'No successful simplify-code skill selection');
 });
 
@@ -51,12 +53,7 @@ Then('delivery preserves callback order, identity, and exceptions', async functi
 Then('cleanup leaves unrelated code and the Git index and HEAD unchanged', async function () {
   assert.ok((await this.read('workflow.mjs')).startsWith(this.unchangedPrefix),
     'Unmodified neighboring function changed');
-  const current = await files(this.workspace);
-  for (const [name, text] of this.original) {
-    if (name !== 'workflow.mjs') assert.equal(current.get(name), text, `Unrelated file changed: ${name}`);
-  }
-  assert.equal(await this.git(['diff', '--cached', '--name-only']), '', 'Index changed');
-  assert.equal(await this.git(['rev-parse', 'HEAD']), this.beforeHead, 'HEAD changed');
+  await onlyChanges(this, ['workflow.mjs']);
 });
 
 Given('an obsolete relocation note in pricing beside unrelated user work', async function () {
@@ -71,7 +68,17 @@ Given('an obsolete relocation note in pricing beside unrelated user work', async
 });
 
 Then('the obsolete relocation note is removed from pricing', async function () {
-  const comments = (await this.read('workflow.mjs')).match(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g) ?? [];
-  assert.doesNotMatch(comments.join('\n'), /\b(?:moved to|relocated)\b/i,
-    'Obsolete relocation note remains');
+  const text = await this.read('workflow.mjs');
+  const tree = ts.createSourceFile('workflow.mjs', text, ts.ScriptTarget.Latest, false, ts.ScriptKind.JS);
+  function inspect(node) {
+    for (const { pos, end } of [...(ts.getLeadingCommentRanges(text, node.pos) ?? []),
+      ...(ts.getTrailingCommentRanges(text, node.end) ?? [])]) {
+      const comment = text.slice(pos, end);
+      if (/\b(?:discount|removed helper|process)\b/i.test(comment)) {
+        assert.doesNotMatch(comment, /\b(?:moved to|relocated)\b/i, 'Obsolete relocation note remains');
+      }
+    }
+    for (const child of node.getChildren(tree)) inspect(child);
+  }
+  inspect(tree);
 });

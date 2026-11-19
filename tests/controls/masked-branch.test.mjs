@@ -29,6 +29,13 @@ test('branch and dirty checkout charge different fees at the boundary in a diver
   assert.equal(await world.git(['merge-base', 'release', 'HEAD']), world.offerBase);
   assert.equal(await world.git(['diff', '--name-only', 'release...HEAD']), 'shipping.mjs');
   assert.equal(await world.git(['diff', '--name-only', 'release', 'HEAD']), 'pickup.md\nshipping.mjs');
+  const card = { baseline: await world.git(['rev-parse', '--short=4', world.offerBase]),
+    changedFiles: ['shipping.mjs'] };
+  await branchScope(card, world);
+  for (const wrong of [{ baseline: await world.git(['rev-parse', 'release']) },
+    { changedFiles: ['pickup.md', 'shipping.mjs'] }]) {
+    await assert.rejects(branchScope({ ...card, ...wrong }, world), assert.AssertionError);
+  }
   for (const [code, expected] of [[await world.git(['show', 'HEAD:shipping.mjs']), 500],
     [await world.read('shipping.mjs'), 0]]) {
     const { shipping } = await import(`data:text/javascript,${encodeURIComponent(code)}`);
@@ -38,16 +45,11 @@ test('branch and dirty checkout charge different fees at the boundary in a diver
   }
 });
 
-test('merge card rejects a target-tip comparison and the repaired checkout result', () => {
-  const base = 'c4c5cd886e6050ac4b57e1dea4000288f913de70';
-  const branch = { baseline: base.slice(0, 9), changedFiles: ['shipping.mjs'], defects: [
+test('merge card rejects the repaired checkout result', () => {
+  const branch = { defects: [
     { file: 'shipping.mjs', subtotalCents: 5000, expectedFeeCents: 0, actualFeeCents: 500 },
   ] };
-  branchScope(branch, base);
   branchFees(branch);
-  for (const wrong of [{ baseline: 'a38c79d' }, { changedFiles: ['pickup.md', 'shipping.mjs'] }]) {
-    assert.throws(() => branchScope({ ...branch, ...wrong }, base), assert.AssertionError);
-  }
   for (const defects of [[], [{ ...branch.defects[0], actualFeeCents: 0 }],
     [{ ...branch.defects[0], subtotalCents: 5001 }]]) {
     assert.throws(() => branchFees({ ...branch, defects }), assert.AssertionError);

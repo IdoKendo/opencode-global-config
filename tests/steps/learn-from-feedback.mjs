@@ -1,12 +1,11 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { Then } from '@cucumber/cucumber';
 import { files } from '../support/harness.mjs';
 
 const recommendation = (world) => JSON.parse(world.handoff.trim()
   .replace(/^```(?:json)?\s*\n([\s\S]*?)\n```$/, '$1'));
 
-function consolePolicy(value, enabled) {
+async function consolePolicy(world, value, enabled) {
   assert.deepEqual(value.rule, { id: 'no-console', currentlyEnabled: enabled,
     proposedSeverity: 'error', allowedMethods: [] }, 'Incorrect console policy');
   assert.equal(value.replacement?.targetCategory, 'application-logger', 'Missing application logger replacement');
@@ -16,7 +15,7 @@ function consolePolicy(value, enabled) {
     assert.ok(location, 'Missing source location');
     const [, path, line] = location;
     assert.equal(path, 'src/worker.js', 'Replacement references the wrong source');
-    const lines = readFileSync(new URL('../fixtures/learn-from-feedback/lint/src/worker.js', import.meta.url), 'utf8').split('\n');
+    const lines = (await world.read(path)).split('\n');
     assert.ok(lines[Number(line) - 1]?.includes('console.log'), 'Source reference does not identify the console call');
   }
   assert.equal(value.deferUntilRepeated, false, 'Single occurrence incorrectly deferred');
@@ -28,18 +27,18 @@ Then('learn-from-feedback is selected through normal skill discovery', function 
   'Missing successful learn-from-feedback selection');
 });
 
-Then('the feedback recommendation enables the existing console rule', function () {
+Then('the feedback recommendation enables the existing console rule', async function () {
   const value = recommendation(this);
   assert.equal(value.action, 'configure-tool');
   assert.equal(value.target, 'eslint.config.mjs');
-  consolePolicy(value, false);
+  await consolePolicy(this, value, false);
 });
 
-Then('the feedback recommendation repairs the missing lint invocation', function () {
+Then('the feedback recommendation repairs the missing lint invocation', async function () {
   const value = recommendation(this);
   assert.equal(value.action, 'repair-execution');
   assert.equal(value.target, 'package.json');
-  consolePolicy(value, true);
+  await consolePolicy(this, value, true);
   assert.equal(value.execution?.script, 'ci');
   assert.deepEqual(value.execution.current, [['node', '--check', 'src/worker.js']],
     'Incorrect current CI execution path');
@@ -48,19 +47,26 @@ Then('the feedback recommendation repairs the missing lint invocation', function
     'CI must enforce lint and preserve syntax verification');
 });
 
-Then('the feedback recommendation improves investigation guidance and preserves the exception', function () {
+Then('the feedback recommendation improves investigation guidance and preserves the exception', async function () {
   const value = recommendation(this);
   assert.equal(value.action, 'update-guidance');
   assert.equal(value.target, '.opencode/skills/change-investigation/SKILL.md');
   assert.equal(value.deferUntilRepeated, false);
-  for (const [line, decision] of [[4, 'adopt'], [7, 'reject']]) {
+  const lines = (await this.read('review.md')).split('\n');
+  const lineFor = (id) => {
+    const index = lines.findIndex((line) => line.includes(`[${id}]`));
+    assert.notEqual(index, -1, `Missing review record ${id}`);
+    return index + 1;
+  };
+  for (const [line, decision] of [[lineFor('F1'), 'adopt'], [lineFor('F2'), 'reject']]) {
     assert.ok(value.feedbackDecisions.some((item) => item.source === 'review.md'
       && item.line === line && item.decision === decision), `Incorrect decision for review.md:${line}`);
     assert.ok(!value.feedbackDecisions.some((item) => item.source === 'review.md'
       && item.line === line && item.decision !== decision), 'Conflicting review decisions');
   }
-  assert.ok(value.retainedRequirements.some((item) => item.source === 'review.md'
-    && item.line === 8 && item.value === 120 && item.unit === 'seconds'),
+  const archiveLine = lineFor('R1');
+  const archive = value.retainedRequirements.filter((item) => item.source === 'review.md' && item.line === archiveLine);
+  assert.ok(archive.length && archive.every((item) => item.value === 120 && item.unit === 'seconds'),
   'Missing archive timeout requirement');
 });
 

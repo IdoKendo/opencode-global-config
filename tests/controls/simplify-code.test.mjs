@@ -172,7 +172,7 @@ test('scope checker rejects edits to neighboring code, unrelated files, staging,
   await rejected(step, world, /Unmodified neighboring function changed/);
   await world.write(world.unchangedPrefix + pricing);
   await world.write(legacy.replace('untouched', 'rewritten'), 'legacy.mjs');
-  await rejected(step, world, /Unrelated file changed: legacy.mjs/);
+  await rejected(step, world, /Out-of-scope file: legacy.mjs/);
   await world.write(legacy, 'legacy.mjs');
   world.git = async (args) => args[0] === 'diff' ? 'workflow.mjs' : cleanGit(args);
   await rejected(step, world, /Index changed/);
@@ -209,8 +209,10 @@ test('relocation checker rejects the old breadcrumb and a renamed breadcrumb', a
   await invoke(step, world);
   await invoke(scope, world);
   await world.write(legacy, 'legacy.mjs');
-  await rejected(scope, world, /Unrelated file changed: legacy.mjs/);
+  await rejected(scope, world, /Out-of-scope file: legacy.mjs/);
   await world.write(userWork, 'legacy.mjs');
+  await world.write(`${clean}\nconst example = '// discount moved to process';\n// Assets relocated at runtime.\n`);
+  await invoke(step, world);
   for (const comment of ['// discount moved to process', '// relocated from the removed helper',
     '/*\n * relocated from the removed helper\n */']) {
     await world.write(`${comment}\n${clean}`);

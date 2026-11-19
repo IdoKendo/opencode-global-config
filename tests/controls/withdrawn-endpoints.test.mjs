@@ -19,14 +19,21 @@ test('review closes only with the rehearsal exception and the active CI safeguar
   const w = await fixture(t, 'learn-from-feedback/withdrawn-endpoints');
   const ci = 'endpoint CI accepts HTTP in rehearsal and rejects it in production';
   await step(w, ci);
+  const verifier = `import { readFileSync } from 'node:fs';
+    const {environment, url} = JSON.parse(readFileSync('endpoint.json'));
+    if (environment === 'production' && new URL(url).protocol === 'http:') process.exit(1);`;
+  await w.write('verify-endpoint.mjs', verifier);
+  await step(w, ci);
   const check = 'the tracker keeps HTTP for rehearsal only and requests no new safeguard';
   const good = { httpAllowedIn: ['rehearsal'], blockingScript: 'verify:endpoint', followUps: [] };
   w.handoff = JSON.stringify(good);
   await step(w, check);
   for (const wrong of [{ httpAllowedIn: [] }, { blockingScript: null }, { followUps: ['Add a policy test'] }]) {
     w.handoff = JSON.stringify({ ...good, ...wrong });
-    await assert.rejects(step(w, check), /Incorrect endpoint review disposition/);
+    await assert.rejects(step(w, check), assert.AssertionError);
   }
   await w.write('verify-endpoint.mjs', '// check accidentally disabled\n');
-  await assert.rejects(step(w, ci), /Production HTTP passed CI/);
+  await assert.rejects(step(w, ci), { name: 'AssertionError', actual: 0, expected: 1 });
+  await w.write('verify-endpoint.mjs', verifier.replace(" && new URL(url).protocol === 'http:'", ''));
+  await assert.rejects(step(w, ci), { name: 'AssertionError', actual: 1, expected: 0 });
 });

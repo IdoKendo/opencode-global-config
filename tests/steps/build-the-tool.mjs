@@ -8,6 +8,10 @@ import { files } from '../support/harness.mjs';
 const digest = (text) => createHash('sha256').update(text).digest('hex');
 const quote = (text) => `'${text.replaceAll("'", "'\\''")}'`;
 const run = (world, tool, input) => world.run(`node run-tool.mjs tools/${tool}.mjs ${quote(input)}`);
+// A normal policy rejection exits 1; Node also exits 1 on an uncaught exception.
+// Give the latter a distinct status during probes without interpreting diagnostics.
+const crashProbe = 'data:text/javascript,' + encodeURIComponent(
+  `process.on('uncaughtExceptionMonitor',()=>process.exit(70))`);
 
 Given('a batch of service timeouts in seconds and one migrated service', function () {
   for (const name of this.immutable.keys()) {
@@ -74,10 +78,10 @@ Then('the release check accepts complete evidence and rejects invalid or incompl
       const input = path.join(directory, `${name}.json`);
       if (data !== undefined) await writeFile(input, typeof data === 'string' ? data : JSON.stringify(data));
       const before = await files(directory);
-      const result = await run(this, 'check', input);
+      const result = await this.run(`NODE_OPTIONS=${quote(`--import=${crashProbe}`)} node run-tool.mjs tools/check.mjs ${quote(input)}`);
       assert.equal(result.code, code, `${name} evidence exit status: ${result.stderr}`);
-      assert.match(result.stdout, code === 0 ? /\bPASS\b/ : /\bFAIL\b/, `${name} evidence result`);
-      assert.doesNotMatch(result.stderr, /SyntaxError|TypeError|ReferenceError/, `${name} evidence crashed`);
+      assert.deepEqual([...new Set(result.stdout.match(/\b(?:PASS|FAIL)\b/g))],
+        [code === 0 ? 'PASS' : 'FAIL'], `${name} evidence result`);
       assert.deepEqual(await files(directory), before, 'Evidence check changed inputs');
     }
   } finally {

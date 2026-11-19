@@ -8,6 +8,7 @@ Feature: Explain the value of a change in its commit message
     When the user asks the agent to suggest a commit message for parallel evaluation
     Then write-commit-message is selected through normal skill discovery
     And the commit subject describes faster evaluation
+    And the subject makes no measured speed claim
     And the commit suggestion leaves files and Git unchanged
 
   Scenario: Keep local speed measurements out of unverified CI claims

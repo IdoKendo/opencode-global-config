@@ -20,17 +20,20 @@ const good = {
   Requirements: {
     status: 'findings', explanation: 'Compared request.md with the working tree.',
     findings: [{ file: 'shipping.mjs', line: 2, source: 'request.md:3',
+      subtotalCents: 5000, expectedFeeCents: 0, actualFeeCents: 500,
       detail: 'At exactly 5000 cents the condition charges 500 instead of free shipping.' }],
   },
   'Code quality': {
     status: 'findings', explanation: 'Compared code with AGENTS.md.',
     findings: [{ file: 'receipt.mjs', line: 2, source: 'AGENTS.md:3',
+      expectedCall: 'logger.info', actualCall: 'console.log',
       detail: 'console.log bypasses the injected logger and structured collector.' }],
   },
 };
 const unavailable = {
   ...good, Requirements: {
     status: 'unavailable', explanation: 'The original ticket is unavailable.', findings: [],
+    limitation: { source: 'context.md', quote: 'The original ticket and acceptance criteria are unavailable.' },
   },
 };
 
@@ -49,8 +52,11 @@ test('review requires separate evidence-backed findings on the correct axes', ()
     reject(check, good, (v) => { v[axis].findings = []; });
     reject(check, good, (v) => { v[axis].findings[0].source = 'guessed convention'; });
     reject(check, good, (v) => { v[axis].findings[0].line = 1; });
-    reject(check, good, (v) => { v[axis].findings[0].detail = 'Looks wrong'; });
+    reject(check, good, (v) => { v[axis].findings[0].detail = ''; });
   }
+  reject(checkRequirements, good, (v) => { v.Requirements.findings[0].actualFeeCents = 0; });
+  reject(checkRequirements, good, (v) => { v.Requirements.findings[0].source = 'other-request.md:3'; });
+  reject(checkQuality, good, (v) => { v['Code quality'].findings[0].actualCall = 'logger.info'; });
   const overlapping = structuredClone(good);
   overlapping.Requirements.findings.push({
     file: 'receipt.mjs', line: 2, source: 'request.md:7',
@@ -60,6 +66,8 @@ test('review requires separate evidence-backed findings on the correct axes', ()
   checkQuality(overlapping);
   reject(checkQuality, good, (v) => { v['Code quality'].findings[0].file = 'shipping.mjs'; });
   const paraphrased = structuredClone(good);
+  paraphrased.Requirements.findings[0].source = 'request.md:3–4';
+  paraphrased['Code quality'].findings[0].source = 'AGENTS.md#L3-L4';
   paraphrased.Requirements.findings[0].detail =
     'The inclusive $50 threshold still incurs a $5 fee; use >= for the boundary.';
   paraphrased['Code quality'].findings[0].detail =
@@ -77,8 +85,8 @@ test('unavailable requirements cannot pass, invent findings, or stop quality rev
     explanation: 'Without the ticket or acceptance criteria, neither change can be judged.' } });
   reject(checkUnavailable, unavailable, (v) => { v.Requirements.status = 'pass'; });
   reject(checkUnavailable, unavailable, (v) => { v.Requirements.findings = good.Requirements.findings; });
-  reject(checkUnavailable, unavailable, (v) => { v.Requirements.explanation = 'All criteria satisfied'; });
-  reject(checkUnavailable, unavailable, (v) => { v.Requirements.explanation = 'Both modules passed without errors.'; });
+  reject(checkUnavailable, unavailable, (v) => { delete v.Requirements.limitation; });
+  reject(checkUnavailable, unavailable, (v) => { v.Requirements.limitation.quote = 'Do not use external services.'; });
   reject(checkQuality, unavailable, (v) => { v['Code quality'].status = 'unavailable'; });
 });
 
@@ -120,6 +128,7 @@ test('Given establishes real staged and unstaged diffs and preserves all user wo
 });
 
 for (const [label, change] of [
+  ['detach the checkout at the same commit', (w) => w.git(['switch', '--detach', 'HEAD'])],
   ['stage user work', (w) => w.git(['add', 'shipping.mjs'])],
   ['change HEAD', (w) => w.git(['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid',
     '-c', 'commit.gpgsign=false', 'commit', '--quiet', '-m', 'Unauthorized'])],

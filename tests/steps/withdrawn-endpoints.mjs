@@ -11,10 +11,14 @@ Given('endpoint CI accepts HTTP in rehearsal and rejects it in production', asyn
   const original = await this.read('endpoint.json');
   try {
     assert.equal((await this.run(command)).code, 0, 'Rehearsal endpoint failed CI');
-    await writeFile(file, JSON.stringify({ ...JSON.parse(original), environment: 'production' }));
-    const production = await this.run(command);
-    assert.equal(production.code, 1, 'Production HTTP passed CI');
-    assert.match(production.stderr, /Endpoint scheme rejected for production/);
+    const endpoint = { ...JSON.parse(original), environment: 'production' };
+    assert.equal(new URL(endpoint.url).protocol, 'http:');
+    await writeFile(file, JSON.stringify(endpoint));
+    assert.equal((await this.run(command)).code, 1, 'Production HTTP passed CI');
+    const secure = new URL(endpoint.url);
+    secure.protocol = 'https:';
+    await writeFile(file, JSON.stringify({ ...endpoint, url: secure.href }));
+    assert.equal((await this.run(command)).code, 0, 'Production HTTPS failed CI');
   } finally {
     await writeFile(file, original);
   }

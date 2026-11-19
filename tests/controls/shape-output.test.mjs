@@ -53,7 +53,14 @@ test('diagnostic reset rejects another guess or an unfocused question set', asyn
     'There is no evidence that a transient network error caused this.']) {
     await rejects(step, `${evidence} ${diagnostic}`, `${evidence} Capture the error.`, /one diagnostic question/);
   }
+  const local = 'Stop tuning retries. The simulator has no network service attached.';
+  for (const question of ['Is a local handler supposed to process the upload?',
+    'Does it return a canned failure, or does it expect a mock upload handler?']) {
+    await rejects(step, `${local} ${question}`, `${local} Capture one failing attempt.`, /one diagnostic question/);
+  }
   await rejects(step, good, `The simulator has a connected network service. ${diagnostic}`,
+    /Missing reconsideration/);
+  await rejects(step, good, `We assume this is a transient network error. ${diagnostic}`,
     /Missing reconsideration/);
   await rejects(step, good, 'The transient error assumption may be wrong. Is the ticket open?',
     /missing error evidence/);
@@ -76,13 +83,16 @@ test('answer boundaries reject filler without requiring one exact phrasing', asy
 
 test('factual answers reject wrong retention and manufactured work', async () => {
   const step = 'the response answers 14 days without inventing actions or estimates';
-  for (const good of ['14 days.', 'Rehearsal archives are retained for **14 days**.']) {
-    await rejects(step, good, '90 days.', /Lead with the retention answer/);
+  for (const good of ['14 days.', 'Two weeks.', 'Rehearsal archives are retained for **14 days**.']) {
+    await rejects(step, good, '90 days.', /retention answer/);
     for (const suffix of [' Next: delete old archives.', ' Run cleanup.', ' This takes 2 minutes.',
       ' Want me to clean up?', '\n1. Open the archive folder.']) {
       await rejects(step, good, good + suffix, /Invented action/);
     }
     await rejects(step, good, good + ' Hope this helps.', /closing pleasantry/);
+  }
+  for (const bad of ['Not 14 days; 90 days.', '14 days for production; rehearsal archives last 90 days.']) {
+    await rejects(step, '14 days.', bad, /retention answer/);
   }
 });
 
@@ -167,6 +177,8 @@ test('change description checker preserves timing direction and benchmark condit
   const table = performance.replace('Median before: 240 ms; after: 180 ms.',
     '| Metric | Before | After |\n| --- | --- | --- |\n| Median | 240 ms | 180 ms |');
   await invoke(step, { handoff: table });
+  await invoke(step, { handoff: performance.replace('after one warm-up run', 'each version ran once to warm up') });
+  await invoke(step, { handoff: performance.replace('after one warm-up run', 'each version ran once for warm-up') });
   await invoke(step, { handoff: performance.replace('Median before: 240 ms; after: 180 ms.',
     'Median: 240 ms → 180 ms.') });
   await invoke(step, { handoff: performance.replace('request-local', 'per-request')
@@ -191,6 +203,8 @@ test('change description checker preserves timing direction and benchmark condit
   ]) await rejects(step, performance, performance.replace(before, after), reason);
   await rejects(step, table, table.replace('| 240 ms | 180 ms |', '| 180 ms | 240 ms |'), /before\/after timing/);
   await rejects(step, performance, performance.replace('Median before: 240 ms; after: 180 ms.',
+    'Median before: 180 ms; after: 240 ms. Goal: 180 ms.'), /before\/after timing/);
+  await rejects(step, performance, performance.replace('Median before: 240 ms; after: 180 ms.',
     'Median: 180 ms → 240 ms.'), /before\/after timing/);
   await rejects(step, performance, 'I can write the change description for you.', /Artifact deferred/);
   await rejects(step, performance, performance + '\nWould you like me to prepare the change description?', /Artifact deferred/);
@@ -203,6 +217,8 @@ test('change description limitations reject missing prerequisites and inflated C
   for (const token of ['CI_RUN_TOKEN', 'PROD_READ_TOKEN']) {
     await rejects(step, performance, performance.replace(token, 'credentials'), /Missing prerequisite/);
   }
+  await rejects(step, performance, performance.replace(/CI_RUN_TOKEN|PROD_READ_TOKEN/g,
+    (token) => token === 'CI_RUN_TOKEN' ? 'PROD_READ_TOKEN' : 'CI_RUN_TOKEN'), /Missing prerequisite/);
   for (const [before, after, reason] of [
     ['CI: not run; CI_RUN_TOKEN is unavailable.', 'CI results: see CI_RUN_TOKEN.', /Missing CI verification limit/],
     ['Production: not checked; PROD_READ_TOKEN is unavailable.', 'Production results: see PROD_READ_TOKEN.', /Missing production verification limit/],

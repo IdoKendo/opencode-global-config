@@ -10,14 +10,13 @@ export const scenarios = {
   'Ask about the filename collision before changing the exporter': {
     fixture: 'design-interview/export',
     prompt: 'Load design-interview by its exact skill ID. Interview me about repeated monthly '
-      + 'ledger exports. The desktop team left its proposals in the repository.',
+      + 'ledger exports. Use the desktop team’s proposals and tracker format in README.md.',
   },
   'End the interview with the copy policy settled and naming still open': {
     fixture: 'design-interview/export',
     prompt: 'Load design-interview by its exact skill ID. To close our ledger export interview: '
       + 'I choose Keep both. A timestamp suffix sounds promising but leave the suffix decision '
-      + 'until next week. Stop here and give me the decision brief. For our tracker, return '
-      + 'JSON with confirmed and open arrays of plain-language decisions and questions.',
+      + 'until next week. Stop here and give me the decision brief in the tracker format in README.md.',
   },
   'Distinguish a missing shipping boundary from a receipt logging violation': {
     fixture: 'review-change/specified',
@@ -135,7 +134,7 @@ export const scenarios = {
   'Ask before adding a Markdown rendering dependency': {
     fixture: 'atomic-code-changes/dependency',
     prompt: 'Implement CommonMark rendering for the preview, including nested lists and fenced code blocks. '
-      + 'Start by inspecting the project.',
+      + 'Start by inspecting the project. Return the decision in the change tracker format in README.md.',
   },
   'Give ordered guidance for a local archive rehearsal': {
     fixture: 'shape-output/rehearsal',
@@ -209,7 +208,7 @@ export const scenarios = {
   'Update affected documentation and report unrelated drift': {
     fixture: 'write-docs/documentation/drift',
     includes: ['write-docs/documentation/common'],
-    prompt: 'Update README.md for the new retry default.',
+    prompt: 'Update README.md for the new retry default. Read response-format.txt for the final handoff.',
   },
   'Correct a broken example using execution evidence': {
     fixture: 'write-docs/documentation/broken-example',
@@ -223,7 +222,7 @@ export const scenarios = {
   'Make an authorized documentation edit without staging or committing': {
     fixture: 'write-docs/documentation/guardrails',
     includes: ['write-docs/documentation/common'],
-    prompt: 'Correct the documented retry default in docs/retries.md.',
+    prompt: 'Correct the documented retry default in docs/retries.md. Read response-format.txt for the final handoff.',
   },
   'Wrap prose without shortening it or changing list structure': {
     fixture: 'write-docs/formatting/wrapping',

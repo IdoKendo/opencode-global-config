@@ -57,20 +57,29 @@ Then('the response starts with useful guidance and ends without pleasantries', f
 
 Then('the response questions the transient-error assumption and asks one diagnostic question', function () {
   const text = plain(this.handoff);
-  const disconnected = /\bno (?:connected network service|network service connected|(?:live )?network connection)\b/i;
-  const questioned = /(?:assum\w*|hypothesis|no evidence|not|isn['’]t|may not|might not|rather than)[^.!?\n]*transient|transient[^.!?\n]*(?:assum\w*|wrong|unproven|unsupported|not|may|might)/i;
-  assert.ok(disconnected.test(text) || questioned.test(text),
+  const disconnected = /\bno (?:connected network service|network service (?:connected|attached)|(?:live )?network connection)\b/i;
+  const doubt = /\b(?:question\w*|reconsider\w*|revisit\w*|doubt\w*|unproven|unsupported|wrong|no evidence|unlikely|uncertain|not|isn['’]t|rather than)\b/i;
+  const questioned = text.split(/[.!?\n]/).some((sentence) => /\btransient\b/i.test(sentence) && doubt.test(sentence));
+  assert.ok(disconnected.test(text) || questioned,
     'Missing reconsideration of the transient-error assumption');
   assert.equal((text.match(/\?/g) ?? []).length, 1, 'Expected one diagnostic question');
-  assert.match(text, /\b(?:error|status)\b[^.!?\n]*\?/i, 'Question must request missing error evidence');
+  const question = text.match(/[^.!?]*\?/)[0];
+  const symptom = /\b(?:error|status|stack trace)\b/i.test(question);
+  const origin = /\b(?:simulat\w*|handler|fixture|mock)\b/i.test(question)
+    && /\b(?:upload|reject\w*|failure|return\w*|process\w*|reach\w*)\b/i.test(question);
+  assert.ok(symptom || origin, 'Question must request missing error evidence or investigate its origin');
   assert.doesNotMatch(text, /\b(?:increase|double|raise|bump|set|change)\b[^.!?\n]*(?:retry|retries|delay|timeout)|(?:retry|retries|delay|timeout)[^.!?\n]*\b(?:to|=)\s*\d+/i,
     'Another speculative retry change');
 });
 
 Then('the response answers 14 days without inventing actions or estimates', function () {
   const text = plain(this.handoff);
-  assert.match(text.split('\n').find((line) => line.trim()) ?? '', /\b14(?:[ -]days?)\b/i,
-    'Lead with the retention answer');
+  const first = text.split(/[.;!?\n]/, 1)[0];
+  const periods = [...first.matchAll(/\b(\d+|fourteen|two)[ -](days?|weeks?)\b/gi)];
+  const days = periods.map(([, amount, unit]) =>
+    ({ fourteen: 14, two: 2 }[amount.toLowerCase()] ?? Number(amount)) * (/week/i.test(unit) ? 7 : 1));
+  assert.ok(days.length && days.every((value) => value === 14)
+    && !/\b(?:not|never|production)\b/i.test(first), 'Lead with the affirmative rehearsal retention answer');
   assert.doesNotMatch(text, /^\s*(?:\d+[.)]|[-+])\s+|\b(?:next(?: step)?|run|execute|you (?:should|must|need to)|please|minutes?|hours?)\b|\?/im,
     'Invented action, estimate, or follow-up');
   assert.doesNotMatch(text, /Hope (?:this|that) helps|Let me know|Happy to clarify/i,
@@ -98,8 +107,10 @@ Then('the response is a complete Markdown change description with local performa
   assert.match(text, /(?:request[- ](?:local|scoped)|per[- ]request)[^.\n]*index|index[^.\n]*request/i,
     'Missing change summary');
   assert.match(text, /\blocal(?:ly)?\b/i, 'Missing local evidence level');
-  const labeled = /\b(?:before|baseline)\b[^\n]*\b240\s*ms\b/i.test(text)
-    && /\bafter\b[^\n]*\b180\s*ms\b/i.test(text);
+  const timings = [...text.matchAll(/\b(before|baseline|after)\b[^|.;:\n\d]*:?\s*(\d+(?:\.\d+)?)\s*ms\b/gi)];
+  const labeled = timings.some(([, label]) => /before|baseline/i.test(label))
+    && timings.some(([, label]) => /after/i.test(label))
+    && timings.every(([, label, value]) => Number(value) === (/after/i.test(label) ? 180 : 240));
   const rows = text.split('\n').filter((line) => line.includes('|')).map((line) =>
     line.replace(/^\s*\||\|\s*$/g, '').split('|').map((cell) => cell.trim()));
   const header = rows.find((row) => row.some((cell) => /^(?:before|baseline)$/i.test(cell))
@@ -116,17 +127,28 @@ Then('the response is a complete Markdown change description with local performa
     [/\b(?:100,?000|100k)\s+(?:input\s+)?records\b/i, 'input size'],
     [/\bseed\s*(?:of\s+|[:=]\s*)?17\b/i, 'fixed seed'], [/\b(?:one|1|single)[ -]worker\b/i, 'worker count'],
     [/\bNode(?:\.js)?\s*(?:v)?24\b/i, 'Node version'], [/\bmacOS\b[^\n,.]*\barm64\b/i, 'platform'],
-    [/\b(?:one|1)\s+warm[- ]?up\b/i, 'warm-up condition'],
     [/\bsame\s+(?:macOS\s+(?:arm64\s+)?)?(?:laptop|machine|host)\b/i, 'same host'],
   ]) assert.match(text, pattern, `Missing benchmark condition: ${label}`);
+  // Bind the count to the warm-up clause, not to the sample or worker count.
+  const warmup = /\bwarm(?:ed|ing)?[- ]?up\b/i;
+  const once = /\b(?:once|one|1|single)\b/i;
+  assert.ok(text.split(/[.,;:\n]|\b(?:after|before|followed by|and)\b/i)
+    .some((clause) => warmup.test(clause) && once.test(clause)
+      && !/\b(?:no|not|zero|skip\w*|twice|two|[02-9]\d*)\b/i.test(clause)),
+  'Missing benchmark condition: warm-up condition');
 });
 
 Then('the change description names the missing CI and production credentials without claiming success', function () {
-  const text = plain(this.handoff);
+  const text = this.handoff.replace(/[`*]/g, '').trim();
+  // A credential belongs to its reported environment even when Markdown wraps the
+  // sentence, or both environments are reported on a single line.
+  const regions = text.split(/(?=\b(?:CI|production)\b)/i);
   for (const [area, token] of [['CI', 'CI_RUN_TOKEN'], ['production', 'PROD_READ_TOKEN']]) {
-    assert.match(text, new RegExp(`\\b${area}\\b[^\\n]*(?:not (?:been )?(?:run|checked|verified)|unverified|blocked|unavailable|missing|pending)`, 'i'),
-      `Missing ${area} verification limit`);
-    assert.ok(this.handoff.includes(token), `Missing prerequisite: ${token}`);
+    const limits = regions.filter((region) => new RegExp(`^${area}\\b`, 'i').test(region))
+      .map((region) => region.split(/[.!?](?:\s|$)/, 1)[0].replace(/\s+/g, ' '))
+      .filter((region) => /\b(?:not (?:been )?(?:run|checked|verified)|unverified|blocked|unavailable|missing|pending)\b/i.test(region));
+    assert.ok(limits.length, `Missing ${area} verification limit`);
+    assert.ok(limits.some((line) => line.includes(token)), `Missing prerequisite: ${token} for ${area}`);
   }
   for (const clause of text.split(/[.!?;\n]+/)) {
     if (/\b(?:CI|production|runtime|end-to-end)\b/i.test(clause)) {

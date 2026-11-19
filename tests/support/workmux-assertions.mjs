@@ -12,8 +12,22 @@ function command(value, subcommand, target) {
   assert.ok(value.cwd?.startsWith('/'), 'Missing absolute working directory');
   assert.equal(value.argv[0], 'workmux');
   assert.equal(value.argv[1], subcommand);
-  if (target) assert.ok(value.argv.includes(target), `Missing target ${target}`);
-  return value.argv;
+  const args = value.argv.flatMap((arg) => /^--[\w-]+=/.test(arg)
+    ? [arg.slice(0, arg.indexOf('=')), arg.slice(arg.indexOf('=') + 1)] : [arg]);
+  if (target) {
+    const valueFlags = ['--base', '--name', '--target-name', '--parent-session', '--mode', '-P', '--prompt-file',
+      '-p', '--prompt', '--timeout', '--status', '--into', '--config', '--layout', '-l', '--agent', '-a'];
+    if (subcommand === 'capture') valueFlags.push('-n', '--lines');
+    const positional = [];
+    for (let i = 2; i < args.length; i++) {
+      if (valueFlags.includes(args[i])) i++;
+      else if (!args[i].startsWith('-')) positional.push(args[i]);
+    }
+    assert.equal(positional.length, subcommand === 'send' ? 2 : 1, 'Unexpected workmux operands');
+    assert.equal(positional[0], target, `Missing target ${target}`);
+    assert.ok(!has(args, '--all', '--gone', '-h', '--help'), 'Command must operate only on its target');
+  }
+  return args;
 }
 
 export function checkDispatch(plan) {
@@ -66,20 +80,19 @@ export function checkHeadless(plan) {
 
 export function checkMonitor(plan) {
   assert.deepEqual(plan.commands.map((item) => item.argv[1]), ['status', 'capture', 'send', 'wait']);
-  for (const item of plan.commands) command(item, item.argv[1], 'billing:retry');
-  const send = plan.commands[2].argv;
+  const [, , send, wait] = plan.commands.map((item) => command(item, item.argv[1], 'billing:retry'));
   assert.equal(send.length, 4, 'Send one structured message inline');
   let followup;
   assert.doesNotThrow(() => { followup = JSON.parse(send[3]); });
   assert.equal(followup.fixturePath, 'tests/fixtures/retry.json');
   assert.deepEqual(followup.verification, ['node', '--test', 'tests/retry.test.mjs']);
-  const timeout = Number(flag(plan.commands[3].argv, '--timeout'));
+  const timeout = Number(flag(wait, '--timeout'));
   assert.ok(Number.isFinite(timeout) && timeout > 0, 'Wait must be bounded');
   assert.equal(plan.verified, false);
   assert.deepEqual(plan.observed, { agentStatus: 'done', verificationExitCode: 1, diffReviewed: false });
   assert.equal(plan.waitMeaning, 'agent-done');
   assert.equal(plan.addWaitMeaning, 'terminal-closed');
-  assert.equal(flag(plan.commands[3].argv, '--status') ?? 'done', 'done');
+  assert.equal(flag(wait, '--status') ?? 'done', 'done');
 }
 
 const lifecycle = {
@@ -98,9 +111,10 @@ export function checkLifecycle(plan) {
     const args = command(row.operation, verb, row.id);
     assert.equal(row.operation.cwd, '/srv/billing');
     assert.deepEqual(row.retained, { terminal, worktree, branch });
-    assert.ok(!has(args, '--force', '-f', '--ignore-uncommitted', '--no-hooks', '--no-verify'));
+    assert.ok(!has(args, '--force', '-f', '--ignore-uncommitted', '--no-hooks', '--no-verify', '--no-keep'));
     if (verb === 'merge') assert.equal(flag(args, '--into'), 'release/2026');
-    if (row.id === 'merge-keep') assert.ok(has(args, '--keep', '-k') && !has(args, '--cleanup'));
+    if (verb === 'merge') assert.ok(!has(args, '-n', '--rebase'));
+    if (row.id === 'merge-keep') assert.ok(!has(args, '--cleanup')); // merge_keep: true in this snapshot
     if (row.id === 'merge-clean') assert.ok(has(args, '--cleanup') && !has(args, '--keep', '-k'));
     if (row.id === 'keep-branch') assert.ok(has(args, '--keep-branch', '-k'));
     if (row.id === 'remove-all') assert.ok(!has(args, '--keep-branch', '-k'));
@@ -109,8 +123,12 @@ export function checkLifecycle(plan) {
 
 export function checkCleanup(plan) {
   for (const id of ['merge-keep', 'merge-clean', 'remove-all', 'keep-branch']) {
-    assert.ok(plan.before.some((item) => item.cwd === `/srv/billing__worktrees/${id}`
-      && item.argv[0] === 'git' && item.argv[1] === 'status'), `Missing Git-state inspection for ${id}`);
+    assert.ok(plan.before.some(({ cwd, argv: [exe, ...args] }) => {
+      if (exe !== 'git' || !cwd?.startsWith('/')) return false;
+      while (args[0] === '-C' && args.length > 1) cwd = resolve(cwd, args.splice(0, 2)[1]);
+      return args[0] === 'status' && resolve(cwd) === `/srv/billing__worktrees/${id}`
+        && !has(args, '-uno', '--untracked-files=no');
+    }), `Missing Git-state inspection for ${id}`);
   }
   assert.ok(plan.after.some((item) => item.argv[0] === 'workmux' && item.argv[1] === 'list'),
     'Missing post-cleanup inventory');

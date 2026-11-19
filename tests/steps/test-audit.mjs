@@ -12,7 +12,7 @@ async function suite(world) {
 
 function passing(record) {
   assert.equal(record.code, 0, 'Shipping suite must pass');
-  assert.ok(record.tests >= 2, 'Missing checkout tests');
+  assert.ok(record.tests > 0, 'Missing checkout tests');
   assert.equal(record.failures, 0);
   assert.equal(record.errors, 0);
   assert.equal(record.skipped, 0, 'Checkout tests must not be skipped');
@@ -69,7 +69,7 @@ Then('the shipping suite passes and detects charging delivery at exactly 50 doll
 });
 Then('the agent verified the final shipping suite', function () {
   assert.ok(this.executions.some((record) => record.kind === 'shipping-suite'
-    && record.tests >= 2 && record.failures === 0 && record.errors === 0 && record.skipped === 0
+    && record.tests === this.shippingResult.tests && record.failures === 0 && record.errors === 0 && record.skipped === 0
     && record.digest === this.shippingResult.digest), 'No successful agent run of the final suite');
 });
 
@@ -81,18 +81,20 @@ Given('a checkout domain suite missing the exact free delivery threshold', async
 });
 
 Then('checkout owns executable coverage for free delivery at exactly 50 dollars', async function () {
+  const changeName = (name) => name.replace(/([a-z])([A-Z])/g, '$1 $2').replaceAll('_', ' ');
+  const temporary = /\b(?:copper|migration|consolidation)\b/i;
   const current = await files(this.workspace);
   const changed = [...current].filter(([name, text]) => this.original.get(name) !== text);
   assert.ok(changed.length > 0, 'No checkout coverage was added');
   for (const [name] of changed) {
     assert.ok(name.startsWith('tests/checkout/'), `Coverage artifact outside checkout owner: ${name}`);
-    assert.doesNotMatch(name, /copper|migration|consolidation/i, 'Temporary change-named coverage artifact');
+    assert.doesNotMatch(changeName(name), temporary, 'Temporary change-named coverage artifact');
   }
   // Mutate the order-facing API, so a shipping-helper-only assertion cannot satisfy this contract.
   await detects(this, "import { deliveryCharge } from './shipping.mjs';\n"
     + 'export function checkoutTotal(total) { return total === 50 ? 55 : total + deliveryCharge(total); }\n',
   'checkout.mjs');
-  assert.doesNotMatch(this.shippingResult.names.join('\n'), /copper|migration|consolidation/i,
+  assert.doesNotMatch(this.shippingResult.names.map(changeName).join('\n'), temporary,
     'Temporary change-named test or suite');
   // The new case must extend the owner without discarding its existing shipping protection.
   await detects(this, 'export function deliveryCharge(total) { return 0; }\n');

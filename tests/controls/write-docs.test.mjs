@@ -162,7 +162,9 @@ test('editing preserves factual caveats and removes filler', async () => {
   await control('it still states that expiration is handled on the next read',
     input('Expired entries are removed on the next read.'),
     input('Expired entries are not removed on the next read.'), 'match');
-  for (const connector of ['by', 'through']) {
+  await control('the document still names CacheBox and its TTL of 60 seconds',
+    input(valid), input(valid.replace('TTL of', 'TTL that is not')), 'match');
+  for (const connector of ['by', 'through', 'on']) {
     await control('it still states that expiration is handled on the next read',
       input(`Expired entries are removed on the next read, not\n${connector} a background timer.`),
       input(`Expired entries are not removed on the next read, not ${connector} a background timer.`), 'match');
@@ -277,15 +279,18 @@ test('default updates cover both guides without changing unrelated installer ins
   };
   for (const file of ['README.md', 'docs/retries.md']) {
     await control('"README.md" and "docs/retries.md" describe the default as 5', good,
-      { ...good, docs: { ...good.docs, [file]: 'The default is 3.' } }, 'match');
+      { ...good, docs: { ...good.docs, [file]: 'The default is 3.' } }, /Missing affirmative default/);
     await control('"README.md" and "docs/retries.md" describe the default as 5', good,
-      { ...good, docs: { ...good.docs, [file]: 'The default is not 5.' } }, 'match');
+      { ...good, docs: { ...good.docs, [file]: 'The default is not 5.' } }, /Missing affirmative default/);
   }
   await control('"docs/install.md" is unchanged', good,
     { ...good, docs: { ...good.docs, 'docs/install.md': 'Install manually.\n' } }, 'strictEqual');
-  const handoff = 'docs/install.md has drift: install-worker.sh was removed.';
-  await control('the handoff identifies the removed installer command in "docs/install.md" as drift',
-    { handoff }, { handoff: handoff.replace('install-worker.sh', 'setup.sh') }, /Missing "install-worker.sh"/);
+  const report = (entry) => ({ handoff: JSON.stringify({ drift: [entry] }) });
+  const drift = { file: 'docs/install.md', command: './install-worker.sh', kind: 'missing-file' };
+  for (const change of [{ command: 'setup.sh' }, { file: 'README.md' }, { kind: 'verified' }]) {
+    await control('the handoff identifies the removed installer command in "docs/install.md" as drift',
+      report(drift), report({ ...drift, ...change }), /Missing installer drift record/);
+  }
 });
 
 test('retry defaults accept either word order without accepting negation or a stale default', async () => {
@@ -293,6 +298,8 @@ test('retry defaults accept either word order without accepting negation or a st
   const input = (text) => ({ docs: { 'docs/retries.md': text } });
   const good = 'The worker uses 5 retry attempts by default (see worker.mjs:15).';
   const linked = 'The [default retry count](../worker.mjs#L15) is 5.';
+  await invoke(step, world(input('The worker defaults to [5 retry attempts](worker.mjs#L15).')));
+  await invoke(step, world(input('The default is 5 retry attempts, up from 3.')));
   await control(step, input(linked), input(linked.replace('is 5', 'is not 5')), /default/i);
   await control(step, input(linked), input('The default is [configurable](version-5).'), /Missing affirmative/);
   for (const bad of [
@@ -300,6 +307,7 @@ test('retry defaults accept either word order without accepting negation or a st
     'The worker uses 3 retry attempts by default.',
     'Set 5 attempts manually. The worker uses 3 attempts by default.',
     'The default is 5. The worker uses 3 retry attempts by default.',
+    'The default is 5. The worker uses 7 retry attempts by default.',
   ]) {
     await control(step, input(good), input(bad), /default/i);
   }
@@ -336,6 +344,10 @@ test('corrected examples and verification claims cannot substitute for runtime r
   await control(handoffStep, good, { ...good, handoff: JSON.stringify({ checks: [] }) }, /Missing reported checks/);
   await control('the guide recommends "node worker.mjs --attempts 3"', good,
     { ...good, docs: { 'docs/usage.md': 'node worker.mjs --attempts 3' } }, '==');
+  for (const command of ['node worker.mjs --attempts 30', 'echo node worker.mjs --attempts 3']) {
+    await control('the guide recommends "node worker.mjs --attempts 3"', good,
+      { ...good, docs: { 'docs/usage.md': `\`\`\`sh\n${command}\n\`\`\`` } }, '==');
+  }
   await control('the guide recommends "node worker.mjs --attempts 3"',
     { ...good, docs: { 'docs/usage.md': `${good.docs['docs/usage.md']}\nThe obsolete --retry option was removed.` } },
     { ...good, docs: { 'docs/usage.md': `${good.docs['docs/usage.md']}\n\n\`\`\`sh\nnode worker.mjs --retry 3\n\`\`\`` } }, 'doesNotMatch');
@@ -396,8 +408,10 @@ test('blocked deployment reports distinguish missing credentials from an unavail
 
 test('direct documentation edits stay unstaged and do not create commits', async () => {
   const good = { docs: { 'docs/retries.md': 'Default is 5.' }, originals: { 'docs/retries.md': 'Default is 3.' } };
-  await control('the agent does not ask for confirmation before editing', good,
-    { ...good, tools: [{ name: 'question', input: 'May I edit?' }] }, /Agent requested confirmation/);
+  const edit = { name: 'patch', input: { patchText: '*** Update File: docs/retries.md' }, status: 'completed' };
+  const ask = { name: 'question', input: 'May I edit?' };
+  await control('the agent does not ask for confirmation before editing', { ...good, tools: [edit, ask] },
+    { ...good, tools: [ask, edit] }, /Agent requested confirmation/);
   await control('the Git index remains empty', good,
     { ...good, git: async () => 'docs/retries.md\n' }, 'strictEqual');
   await control('the Git HEAD is unchanged', good,
@@ -405,17 +419,24 @@ test('direct documentation edits stay unstaged and do not create commits', async
 });
 
 test('implementation evidence requires a successful recorded read, not a handoff assertion', async () => {
+  const report = (evidence, edited = 'docs/retries.md') => JSON.stringify({ edited, evidence });
+  const step = 'the handoff identifies the edited file and the implementation evidence checked';
   const good = {
-    handoff: 'Edited docs/retries.md after checking worker.mjs: default is 5.',
-    tools: [{ name: 'read', input: { file: 'worker.mjs' }, output: 'let attempts = 5n;', status: 'completed' }],
+    handoff: report({ source: 'worker.mjs', line: 2 }),
+    docs: { 'worker.mjs': '// defaults\nlet attempts = 5n;\n' },
+    tools: [{ name: 'read', input: { path: 'worker.mjs' }, output: 'let attempts = 5n;', status: 'completed' }],
   };
-  await control('the handoff identifies the edited file and the implementation evidence checked',
-    { ...good, handoff: 'Updated docs/retries.md to 5. Verified the worker’s default output.' },
-    { ...good, handoff: 'Updated docs/retries.md to 5. Verified Markdown line lengths.' },
-    /Missing implementation source or worker-output reference/);
-  for (const tools of [[], [{ ...good.tools[0], status: 'error' }], [{ ...good.tools[0], output: 'let attempts = 3n;' }]]) {
-    await control('the handoff identifies the edited file and the implementation evidence checked',
-      good, { ...good, tools }, /Missing recorded implementation evidence/);
+  await control(step, good, { ...good, handoff: report({ source: 'worker.mjs', line: 1 }) }, /Wrong default source line/);
+  await control(step, good, { ...good, handoff: report({ source: 'worker.mjs', line: 2 }, 'README.md') }, /Wrong edited file/);
+  const runtime = { handoff: report({ command: ['node', 'worker.mjs'] }), executions: [{ args: [], code: 0 }] };
+  await invoke(step, world({ ...good, tools: [{ name: 'shell', input: { command: 'nl -ba worker.mjs' },
+    output: '2 let attempts = 5n;', status: 'completed' }] }));
+  await control(step, runtime, { ...runtime, executions: [{ args: ['--attempts', '5'], code: 0 }] },
+    /Missing default execution receipt/);
+  for (const tools of [[], [{ ...good.tools[0], status: 'error' }], [{ ...good.tools[0], output: 'let attempts = 3n;' }],
+    [{ ...good.tools[0], input: { path: 'notes/worker.mjs' } }],
+    [{ name: 'shell', input: { command: 'echo "worker.mjs: Retry attempts: 5"' }, output: 'Retry attempts: 5', status: 'completed' }]]) {
+    await control(step, good, { ...good, tools }, /Missing recorded implementation evidence/);
   }
 });
 

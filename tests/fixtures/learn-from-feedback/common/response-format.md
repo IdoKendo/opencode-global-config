@@ -20,6 +20,7 @@ Inspect the project and review before choosing values. Do not edit the project.
   Reference the line containing each distinct review proposal and report your position on it.
 - `retainedRequirements`: array of `{ "source": string, "line": number,
   "value": number, "unit": string }` for numeric requirements the recommendation must preserve.
+  Report durations in seconds using the unit identifier `seconds`.
 - `explanation`: optional free text.
 
 Use null or empty arrays for fields that do not apply.
