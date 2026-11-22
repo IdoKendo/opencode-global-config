@@ -6,6 +6,14 @@ import { scenarios as lookup } from './probe-lookup.mjs';
 import { scenarios as review } from './probe-review.mjs';
 
 export const scenarios = {
+  'Remove narration without counting an inline suffix as a deleted line': {
+    fixture: 'delete-comment/export',
+    prompt: 'Use delete-comment on export.mjs. Include a final JSON line with numeric blocksRemoved and linesRemoved.',
+  },
+  'Keep the compatibility workaround when its issue cannot be recorded': {
+    fixture: 'delete-comment/export',
+    prompt: 'Use delete-comment on compat.mjs. No issue tracker is available; do not access external services.',
+  },
   ...audit, ...approval, ...feedback, ...inventory, ...lookup, ...review,
   'Ask about the filename collision before changing the exporter': {
     fixture: 'design-interview/export',
