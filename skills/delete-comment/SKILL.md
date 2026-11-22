@@ -26,6 +26,10 @@ Check the implementation, callers, tests, configuration and decision records as 
 - **Decision record:** Preserve the constraint and rationale in the repository's decision
   records. Cite the full path before removing the duplicate.
 
+When keeping a comment that a code change could make unnecessary, name the exact symbol
+and recommend the smallest change that would express the same information. Leave that
+change as a follow-up; do not apply it during comment cleanup.
+
 If evidence, a suitable record, access or authorization is missing, keep the comment and
 report what is needed. Preserve existing edits, code and significant whitespace; do not
 reformat, move code or remove blank lines for credit.

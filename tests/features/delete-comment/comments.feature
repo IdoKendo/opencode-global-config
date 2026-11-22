@@ -13,3 +13,8 @@ Feature: Remove comments without losing information
   Scenario: Keep the compatibility workaround when its issue cannot be recorded
     When the user asks the agent to clean up the compatibility helper offline
     Then the fallback and its retirement condition remain intact
+
+  Scenario: Recommend a unit-bearing name for a kept timeout comment
+    When the user asks the agent to clean up the retry timer
+    Then the timer and its milliseconds comment remain unchanged
+    And the report recommends renaming the delay parameter to show its unit

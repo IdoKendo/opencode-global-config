@@ -14,6 +14,11 @@ export const scenarios = {
     fixture: 'delete-comment/export',
     prompt: 'Use delete-comment on compat.mjs. No issue tracker is available; do not access external services.',
   },
+  'Recommend a unit-bearing name for a kept timeout comment': {
+    fixture: 'delete-comment/timer',
+    prompt: 'Use delete-comment on retry.mjs. For suggested edits, include a final JSON line '
+      + 'with an edits array. For any proposed rename use {from, to} with bare identifiers.',
+  },
   ...audit, ...approval, ...feedback, ...inventory, ...lookup, ...review,
   'Ask about the filename collision before changing the exporter': {
     fixture: 'design-interview/export',
