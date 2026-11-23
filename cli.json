@@ -5,12 +5,13 @@
   },
   "plugins": [
     "-opencode.sidebar.mcp",
-    "./plugins/quota-usage/tui.tsx",
-    "./plugins/goal-sidebar/tui.tsx",
-    "./plugins/skills-sidebar/tui.tsx",
-    "./plugins/notification/tui.ts",
-    "./plugins/workmux-status/tui.ts",
-    "./plugins/tmux-tabs/tui.ts"
+    "./plugins/quota-usage",
+    "./plugins/goal-sidebar",
+    "./plugins/skills-sidebar",
+    "./plugins/notification",
+    "./plugins/workmux-status",
+    "./plugins/tmux-tabs",
+    "./plugins/find-in-session"
   ],
   "diffs": {
     "wrap": "word"
