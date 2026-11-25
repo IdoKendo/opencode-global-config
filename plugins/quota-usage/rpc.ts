@@ -7,7 +7,10 @@ export type QuotaEntry = {
     unit: string
     progress?: number
     window?: string
-    reset?: string
+    /** Time until the quota resets, in seconds. */
+    reset?: number
+    /** Time until each credit expires, in seconds. */
+    expiries?: number[]
     info?: string
 }
 
@@ -33,7 +36,8 @@ export const QuotaUsageRpc = Rpc.define({
                                 unit: { type: "string" },
                                 progress: { type: "number" },
                                 window: { type: "string" },
-                                reset: { type: "string" },
+                                reset: { type: "number" },
+                                expiries: { type: "array", items: { type: "number" } },
                                 info: { type: "string" },
                             },
                             required: ["id", "name", "remaining", "unit"],

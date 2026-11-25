@@ -5,6 +5,11 @@ import { createSignal, Show } from "solid-js"
 import { QuotaUsageRpc, type QuotaEntry, type QuotaResult } from "./rpc.js"
 
 const BOLD = createTextAttributes({ bold: true })
+const TOKYO_NIGHT = { blue: "#7aa2f7", purple: "#bb9af7", orange: "#ff9e64" } as const
+
+function quotaColor(value: number, urgent: number, warning: number) {
+    return value <= urgent ? TOKYO_NIGHT.orange : value <= warning ? TOKYO_NIGHT.purple : TOKYO_NIGHT.blue
+}
 
 type UsageState =
     | { status: "loading"; updated?: number; data?: QuotaEntry[] }
@@ -77,6 +82,13 @@ export default Plugin.define({
 
 function QuotaUsagePanel(props: { api: Plugin.Context; state: () => UsageState }) {
     const theme = props.api.theme
+    const extraUsageColor = (entry: QuotaEntry) => {
+        if (entry.id !== "extra-usage" || entry.progress === undefined) return undefined
+        return quotaColor(entry.progress, 10, 25)
+    }
+    const countdown = (seconds: number) => {
+        return <span style={{ fg: quotaColor(seconds, 86_400, 7 * 86_400) }}>{formatRelativeSeconds(seconds)}</span>
+    }
     const data = () => props.state().data ?? []
     const errorMessage = () => {
         const state = props.state()
@@ -93,23 +105,37 @@ function QuotaUsagePanel(props: { api: Plugin.Context; state: () => UsageState }
             {data().length === 0 ? <text fg={theme.text.muted}>Waiting for usage data…</text> : null}
             {data().map((entry) => (
                 <box flexDirection="column">
-                    <text fg={theme.text.muted}>{formatQuotaEntry(entry)}</text>
+                    <text fg={theme.text.muted}>{entry.name}: <span style={{ fg: extraUsageColor(entry) ?? theme.text.muted }}>{formatQuotaValue(entry)}</span></text>
                     {entry.progress !== undefined ? (
                         <box height={1} width="100%" backgroundColor={theme.background.raised.base}>
-                            {entry.progress > 0 ? <box height={1} width={`${entry.progress}%`} backgroundColor={theme.text.feedback.info.base} /> : null}
+                            {entry.progress > 0 ? <box height={1} width={`${entry.progress}%`} backgroundColor={extraUsageColor(entry) ?? theme.text.feedback.info.base} /> : null}
                         </box>
                     ) : null}
-                    {entry.reset ? <text fg={theme.text.muted}>  {entry.reset}</text> : null}
+                    {entry.reset !== undefined ? <text fg={theme.text.muted}>  resets in {countdown(entry.reset)}</text> : null}
+                    {entry.expiries?.slice(0, 4).map((seconds) => (
+                        <text fg={theme.text.muted}>  • {countdown(seconds)}</text>
+                    ))}
+                    {entry.expiries && entry.expiries.length > 4 ? <text fg={theme.text.muted}>  +{entry.expiries.length - 4} more</text> : null}
                 </box>
             ))}
         </box>
     )
 }
 
-function formatQuotaEntry(entry: QuotaEntry) {
+function formatQuotaValue(entry: QuotaEntry) {
     const window = entry.window ? ` (${entry.window})` : ""
     const info = entry.info ? ` ${entry.info}` : ""
-    return truncate(`${entry.name}: ${entry.remaining}${entry.unit}${window}${info}`, 72)
+    return truncate(`${entry.remaining}${entry.unit}${window}${info}`, 72 - entry.name.length - 2)
+}
+
+function formatRelativeSeconds(seconds: number) {
+    if (seconds <= 0) return "now"
+    const minutes = Math.floor(seconds / 60)
+    const hours = Math.floor(minutes / 60)
+    const days = Math.floor(hours / 24)
+    if (days > 0) return `${days}d ${hours % 24}h ${minutes % 60}m`
+    if (hours > 0) return `${hours}h ${minutes % 60}m`
+    return `${minutes}m`
 }
 
 function formatUpdatedAt(timestamp?: number) {

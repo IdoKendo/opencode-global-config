@@ -124,7 +124,7 @@ function parseRateLimitWindow(id: string, name: string, snapshot: Record<string,
         unit: "%",
         progress: remaining,
         window: windowSeconds ? describeWindow(windowSeconds) : undefined,
-        reset: resetAfter !== null ? `resets in ${formatRelativeSeconds(resetAfter)}` : resetAt !== null ? `resets at ${new Date(resetAt * 1000).toLocaleTimeString()}` : undefined,
+        reset: resetAfter ?? (resetAt === null ? undefined : Math.ceil(resetAt - Date.now() / 1000)),
     }
 }
 
@@ -140,14 +140,12 @@ function extractResetCreditEntry(payload: unknown): QuotaEntry | null {
             .filter((expiresAt) => Number.isFinite(expiresAt) && expiresAt > now)
             .sort((left, right) => left - right)
         : []
-    const expirySummary = expiries.slice(0, 4).map((expiresAt) => formatRelativeSeconds(Math.ceil((expiresAt - now) / 1000)))
-    if (expiries.length > 4) expirySummary.push(`+${expiries.length - 4}`)
     return {
         id: "reset-credits",
         name: "Limit Reset Credits",
         remaining: availableCount,
         unit: " available",
-        reset: expirySummary.length > 0 ? `expires in ${expirySummary.join(" | ")}` : undefined,
+        expiries: expiries.map((expiresAt) => Math.ceil((expiresAt - now) / 1000)),
     }
 }
 
@@ -168,16 +166,4 @@ function describeWindow(seconds: number) {
     const minutes = Math.round(seconds / 60)
     if (minutes >= 60 && minutes % 60 === 0) return `${minutes / 60}h window`
     return `${minutes}m window`
-}
-
-function formatRelativeSeconds(seconds: number) {
-    if (seconds <= 0) return "now"
-    const minutes = Math.floor(seconds / 60)
-    const hours = Math.floor(minutes / 60)
-    const days = Math.floor(hours / 24)
-    const remainingHours = hours % 24
-    const remainingMinutes = minutes % 60
-    if (days > 0) return `${days}d ${remainingHours}h ${remainingMinutes}m`
-    if (hours > 0) return `${hours}h ${remainingMinutes}m`
-    return `${minutes}m`
 }
