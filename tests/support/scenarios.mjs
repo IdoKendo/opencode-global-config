@@ -5,7 +5,22 @@ import { scenarios as inventory } from './probe-inventory.mjs';
 import { scenarios as lookup } from './probe-lookup.mjs';
 import { scenarios as review } from './probe-review.mjs';
 
+const overview = prompt => ({
+  fixture: 'summarize-change/receiver',
+  prompt: `Use summarize-change to summarize ${prompt}. Save the report in .git/reviewer-report. `
+    + 'The workspace has isolated provider CLIs: from the workspace root, prefix each provider or '
+    + 'collection command with PATH="$PWD/.git/bin:$PATH". Do not contact external services.',
+});
+
 export const scenarios = {
+  'Follow the published GitHub branch instead of the GitLab origin': overview('the current branch'),
+  'Review a renamed file and its deleted-line discussion in a nested GitLab group': overview(
+    'https://gitlab.com/acme/tools/platform/receiver/-/merge_requests/32 for a reviewer who uses '
+    + 'literal labels <overview>, <change>, and <test> in the overview, change notes, and test notes respectively',
+  ),
+  'Show the available GitHub patch without presenting it as complete': overview(
+    'https://github.com/acme/receiver/pull/17 and tell me about any evidence limits',
+  ),
   'Remove narration without counting an inline suffix as a deleted line': {
     fixture: 'delete-comment/export',
     prompt: 'Use delete-comment on export.mjs. Include a final JSON line with numeric blocksRemoved and linesRemoved.',

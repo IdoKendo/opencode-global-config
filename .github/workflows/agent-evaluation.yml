@@ -62,6 +62,8 @@ jobs:
           JS
       - name: Install dependencies
         run: |
+          python3 -m pip install --target "$RUNNER_TEMP/skill-python" -r skills/summarize-change/requirements.txt
+          echo "PYTHONPATH=$RUNNER_TEMP/skill-python" >> "$GITHUB_ENV"
           if [ -f package-lock.json ]; then
             npm ci
           else

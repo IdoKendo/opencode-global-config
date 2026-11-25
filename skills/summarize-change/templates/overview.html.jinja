@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>{{ evidence.title }}</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --purple-600: #8533E7;
+      --indigo: #0E259E;
+      --ink: #190F36;
+      --blue: #1E6AFF;
+    }
+    html { background: white }
+    body {
+      max-width: 56rem; margin: 2rem auto; padding: 0 1rem;
+      color: var(--ink); font: 1rem/1.6 system-ui;
+    }
+    header {
+      padding: 1rem 0; border-top: .35rem solid var(--purple-600);
+    }
+    a { color: var(--indigo); text-underline-offset: .18em }
+    :focus-visible { outline: 3px solid var(--blue); outline-offset: 3px }
+    h1, h2 { line-height: 1.2 }
+    h1 { margin: .5em 0 0; overflow-wrap: anywhere }
+    h2 { margin-top: 1.5em; border-left: .2rem solid var(--blue); padding-left: .5em }
+    aside { margin-top: 1rem; padding: .75rem 1rem; border-left: .3rem solid var(--purple-600) }
+    li { margin: .45rem 0; overflow-wrap: anywhere }
+    li::marker { color: var(--blue) }
+    pre { overflow: auto; padding: 1rem }
+    blockquote { white-space: pre-wrap; margin: .3rem 0; border-left: 2px solid var(--blue); padding-left: .8rem }
+    details { margin-top: 2rem; border: 1px solid var(--blue); border-radius: .5rem; padding: .75rem 1rem }
+    summary { cursor: pointer; color: var(--indigo); font-weight: 600 }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <a href="{{ evidence.url | http_url }}">Open original change</a> · <code>{{ evidence.head[:12] }}</code>
+    <h1>{{ evidence.title }}</h1>
+  </header>
+  {% if evidence.warning %}
+  <aside><strong>Evidence limit:</strong> {{ evidence.warning }}</aside>
+  {% endif %}
+  <p>{{ summary.overview }}</p>
+  {% for heading, items in [('What changed', summary.changes), ('Test evidence', summary.tests)] %}
+  <h2>{{ heading }}</h2>
+  <ul>
+    {% for item in items %}
+    <li>{{ item }}</li>
+    {% endfor %}
+  </ul>
+  {% endfor %}
+  <h2>Open inline discussions</h2>
+  {% if evidence.threads %}
+  <ul>
+    {% for thread in evidence.threads %}
+    <li>
+      <a href="{{ thread.url | http_url }}">{{ thread.path }}:{{ thread.line or '?' }} ({{ thread.side }} side{% if thread.get('earlierRevision') %}, earlier revision{% endif %})</a>
+      <blockquote>{{ thread.body }}</blockquote>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>No open reviewer discussions in the collected inline evidence.</p>
+  {% endif %}
+  <details>
+    <summary>Changed files and diff</summary>
+    <ul>
+      {% for file in evidence.files %}
+      <li><a href="{{ file.url | http_url }}">{% if file.get('oldPath') %}{{ file.oldPath }} → {% endif %}{{ file.path }}</a></li>
+      {% endfor %}
+    </ul>
+    <pre>{{ evidence.diff }}</pre>
+  </details>
+</main>
+</body>
+</html>
